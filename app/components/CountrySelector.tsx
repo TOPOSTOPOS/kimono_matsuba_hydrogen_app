@@ -52,7 +52,7 @@ export function CountrySelector() {
   return (
     <section
       ref={observerRef}
-      className="grid w-full gap-4"
+      className="grid w-full gap-4 text-primary"
       onMouseLeave={closeDropdown}
     >
       <Heading size="lead" className="cursor-default" as="h3">
@@ -60,7 +60,7 @@ export function CountrySelector() {
       </Heading>
       <div className="relative">
         <details
-          className="absolute w-full border rounded border-contrast/30 dark:border-white open:round-b-none overflow-clip"
+          className="absolute w-full border border-primary/30 dark:border-white overflow-clip sm-max:static"
           ref={closeRef}
         >
           <summary className="flex items-center justify-between w-full px-4 py-3 cursor-pointer">
@@ -118,8 +118,8 @@ function Country({
     >
       <Button
         className={clsx([
-          'text-contrast dark:text-primary',
-          'bg-primary dark:bg-contrast w-full p-2 transition rounded flex justify-start',
+          'text-primary dark:text-contrast',
+          'bg-contrast dark:bg-primary w-full p-2 transition flex justify-start',
           'items-center text-left cursor-pointer py-2 px-4',
         ])}
         type="submit"

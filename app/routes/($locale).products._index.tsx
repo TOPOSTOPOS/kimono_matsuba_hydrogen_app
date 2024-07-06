@@ -43,12 +43,12 @@ export async function loader({
     url: request.url,
     collection: {
       id: 'all-products',
-      title: 'All Products',
+      title: 'すべての商品',
       handle: 'products',
       descriptionHtml: 'All the store products',
       description: 'All the store products',
       seo: {
-        title: 'All Products',
+        title: 'すべての商品',
         description: 'All the store products',
       },
       metafields: [],
@@ -72,7 +72,7 @@ export default function AllProducts() {
 
   return (
     <>
-      <PageHeader heading="All Products" variant="allCollections" />
+      <PageHeader heading="すべての商品" variant="allCollections" />
       <Section>
         <Pagination connection={products}>
           {({nodes, isLoading, NextLink, PreviousLink}) => {
@@ -87,13 +87,13 @@ export default function AllProducts() {
             return (
               <>
                 <div className="flex items-center justify-center mt-6">
-                  <PreviousLink className="inline-block rounded font-medium text-center py-3 px-6 border border-primary/10 bg-contrast text-primary w-full">
+                  <PreviousLink className="inline-block w-full px-6 py-3 font-medium text-center border rounded border-primary/10 bg-contrast text-primary">
                     {isLoading ? 'Loading...' : 'Previous'}
                   </PreviousLink>
                 </div>
                 <Grid data-test="product-grid">{itemsMarkup}</Grid>
                 <div className="flex items-center justify-center mt-6">
-                  <NextLink className="inline-block rounded font-medium text-center py-3 px-6 border border-primary/10 bg-contrast text-primary w-full">
+                  <NextLink className="inline-block w-full px-6 py-3 font-medium text-center border rounded border-primary/10 bg-contrast text-primary">
                     {isLoading ? 'Loading...' : 'Next'}
                   </NextLink>
                 </div>

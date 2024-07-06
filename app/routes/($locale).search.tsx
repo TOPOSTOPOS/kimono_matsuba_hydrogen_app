@@ -87,18 +87,18 @@ export default function Search() {
     <>
       <PageHeader>
         <Heading as="h1" size="copy">
-          Search
+          キーワード検索
         </Heading>
-        <Form method="get" className="relative flex w-full text-heading">
+        <Form method="get" className="relative flex w-full text-base">
           <Input
             defaultValue={searchTerm}
             name="q"
-            placeholder="Search…"
+            placeholder="キーワードを入力してください"
             type="search"
             variant="search"
           />
           <button className="absolute right-0 py-2" type="submit">
-            Go
+            検索する
           </button>
         </Form>
       </PageHeader>
@@ -122,13 +122,13 @@ export default function Search() {
               return (
                 <>
                   <div className="flex items-center justify-center mt-6">
-                    <PreviousLink className="inline-block rounded font-medium text-center py-3 px-6 border border-primary/10 bg-contrast text-primary w-full">
+                    <PreviousLink className="inline-block w-full px-6 py-3 font-medium text-center border rounded border-primary/10 bg-contrast text-primary">
                       {isLoading ? 'Loading...' : 'Previous'}
                     </PreviousLink>
                   </div>
                   <Grid data-test="product-grid">{itemsMarkup}</Grid>
                   <div className="flex items-center justify-center mt-6">
-                    <NextLink className="inline-block rounded font-medium text-center py-3 px-6 border border-primary/10 bg-contrast text-primary w-full">
+                    <NextLink className="inline-block w-full px-6 py-3 font-medium text-center border rounded border-primary/10 bg-contrast text-primary">
                       {isLoading ? 'Loading...' : 'Next'}
                     </NextLink>
                   </div>
@@ -154,9 +154,7 @@ function NoResults({
     <>
       {noResults && (
         <Section padding="x">
-          <Text className="opacity-50">
-            No results, try a different search.
-          </Text>
+          <Text className="opacity-50">検索結果が見つかりませんでした。</Text>
         </Section>
       )}
       <Suspense>
@@ -171,11 +169,11 @@ function NoResults({
             return (
               <>
                 <FeaturedCollections
-                  title="Trending Collections"
+                  title="人気のコレクション"
                   collections={featuredCollections}
                 />
                 <ProductSwimlane
-                  title="Trending Products"
+                  title="人気の商品"
                   products={featuredProducts}
                 />
               </>

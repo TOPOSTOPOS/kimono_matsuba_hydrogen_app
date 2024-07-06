@@ -1,4 +1,4 @@
-import {useRef, Suspense} from 'react';
+import {useRef, Suspense, useState} from 'react';
 import {Disclosure, Listbox} from '@headlessui/react';
 import {
   defer,
@@ -193,21 +193,18 @@ export default function Product() {
               </Suspense>
               <div className="grid gap-4 py-4">
                 {descriptionHtml && (
-                  <ProductDetail
-                    title="Product Details"
-                    content={descriptionHtml}
-                  />
+                  <ProductDetail title="商品説明" content={descriptionHtml} />
                 )}
                 {shippingPolicy?.body && (
-                  <ProductDetail
-                    title="Shipping"
+                  <ProductDetailDisclosure
+                    title="配送について"
                     content={getExcerpt(shippingPolicy.body)}
                     learnMore={`/policies/${shippingPolicy.handle}`}
                   />
                 )}
                 {refundPolicy?.body && (
-                  <ProductDetail
-                    title="Returns"
+                  <ProductDetailDisclosure
+                    title="返品について"
                     content={getExcerpt(refundPolicy.body)}
                     learnMore={`/policies/${refundPolicy.handle}`}
                   />
@@ -268,11 +265,72 @@ export function ProductForm({
     selectedVariant?.compareAtPrice?.amount &&
     selectedVariant?.price?.amount < selectedVariant?.compareAtPrice?.amount;
 
+  const [rentalPeriod, setRentalPeriod] = useState('1日');
+
   const navigate = useNavigate();
 
   return (
-    <div className="grid gap-10">
+    <form className="grid gap-10" encType="multipart/form-data">
       <div className="grid gap-4">
+        <Listbox value={rentalPeriod} onChange={setRentalPeriod}>
+          <Listbox.Label className="block mb-1 text-sm font-medium text-gray-900">
+            レンタル期間
+          </Listbox.Label>
+
+          {isOutOfStock ? (
+            <div className="relative mt-1">
+              <Text>SOLDOUTのため期間設定はできません</Text>
+            </div>
+          ) : (
+            <div className="relative mt-1">
+              <Listbox.Button className="relative w-full py-2 pl-3 pr-10 text-left bg-white border border-gray-300 rounded-lg shadow-md cursor-default focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary sm:text-sm">
+                <span className="block truncate">{rentalPeriod}</span>
+                <span className="absolute inset-y-0 right-0 flex items-center pr-2 pointer-events-none">
+                  <IconCaret />
+                </span>
+              </Listbox.Button>
+              <Listbox.Options className="absolute z-10 w-full py-1 mt-1 overflow-auto text-base bg-white rounded-md shadow-lg max-h-60 ring-1 ring-black ring-opacity-5 focus:outline-none sm:text-sm">
+                {['1日', '3日', '7日', '14日', '30日'].map((period) => (
+                  <Listbox.Option
+                    key={period}
+                    value={period}
+                    className={({active}) =>
+                      clsx(
+                        active
+                          ? 'text-primary bg-primary-light'
+                          : 'text-gray-900',
+                        'cursor-default select-none relative py-2 pl-10 pr-4',
+                      )
+                    }
+                  >
+                    {({selected, active}) => (
+                      <>
+                        <span
+                          className={clsx(
+                            selected ? 'font-medium' : 'font-normal',
+                            'block truncate',
+                          )}
+                        >
+                          {period}
+                        </span>
+                        {selected ? (
+                          <span
+                            className={clsx(
+                              active ? 'text-primary' : 'text-primary-dark',
+                              'absolute inset-y-0 left-0 flex items-center pl-3',
+                            )}
+                          >
+                            <IconCheck />
+                          </span>
+                        ) : null}
+                      </>
+                    )}
+                  </Listbox.Option>
+                ))}
+              </Listbox.Options>
+            </div>
+          )}
+        </Listbox>
         <VariantSelector
           handle={product.handle}
           options={product.options.filter((option) => option.values.length > 1)}
@@ -287,6 +345,7 @@ export function ProductForm({
                 <Heading as="legend" size="lead" className="min-w-[4rem]">
                   {option.name}
                 </Heading>
+
                 <div className="flex flex-wrap items-baseline gap-4">
                   {option.values.length > 7 ? (
                     <div className="relative w-full">
@@ -313,6 +372,7 @@ export function ProductForm({
                               )}
                             >
                               <span>{option.value}</span>
+
                               <IconCaret direction={open ? 'up' : 'down'} />
                             </Listbox.Button>
                             <Listbox.Options
@@ -383,7 +443,7 @@ export function ProductForm({
           <div className="grid items-stretch gap-4">
             {isOutOfStock ? (
               <Button variant="secondary" disabled>
-                <Text>Sold out</Text>
+                <Text>SOLD OUT</Text>
               </Button>
             ) : (
               <AddToCartButton
@@ -395,12 +455,15 @@ export function ProductForm({
                 ]}
                 variant="primary"
                 data-test="add-to-cart"
+                quantity={1}
+                customAttributes={[{key: 'Rental Period', value: rentalPeriod}]}
               >
                 <Text
                   as="span"
                   className="flex items-center justify-center gap-2"
                 >
-                  <span>Add to Cart</span> <span>·</span>{' '}
+                  <span className="font-bold">カートに追加</span> <span>·</span>{' '}
+                  <span className="block truncate">{rentalPeriod}</span>
                   <Money
                     withoutTrailingZeros
                     data={selectedVariant?.price!}
@@ -428,11 +491,50 @@ export function ProductForm({
           </div>
         )}
       </div>
-    </div>
+    </form>
   );
 }
 
 function ProductDetail({
+  title,
+  content,
+  learnMore,
+}: {
+  title: string;
+  content: string;
+  learnMore?: string;
+}) {
+  return (
+    <div key={title} className="grid w-full gap-2">
+      <div className="text-left">
+        <div className="flex justify-between">
+          <Text size="lead" as="h4">
+            {title}
+          </Text>
+        </div>
+      </div>
+
+      <div className={'pb-4 pt-2 grid gap-2'}>
+        <div
+          className="prose dark:prose-invert"
+          dangerouslySetInnerHTML={{__html: content}}
+        />
+        {learnMore && (
+          <div className="">
+            <Link
+              className="pb-px border-b border-primary/30 text-primary/50"
+              to={learnMore}
+            >
+              Learn more
+            </Link>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function ProductDetailDisclosure({
   title,
   content,
   learnMore,

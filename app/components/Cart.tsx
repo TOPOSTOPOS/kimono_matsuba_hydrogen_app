@@ -92,7 +92,7 @@ function CartDiscounts({
       {/* Have existing discount, display it with a remove option */}
       <dl className={codes && codes.length !== 0 ? 'grid' : 'hidden'}>
         <div className="flex items-center justify-between font-medium">
-          <Text as="dt">Discount(s)</Text>
+          <Text as="dt">ディスカウント</Text>
           <div className="flex items-center justify-between">
             <UpdateDiscountForm>
               <button>
@@ -119,10 +119,10 @@ function CartDiscounts({
             className={getInputStyleClasses()}
             type="text"
             name="discountCode"
-            placeholder="Discount code"
+            placeholder="クーポンコード"
           />
-          <button className="flex justify-end font-medium whitespace-nowrap">
-            Apply Discount
+          <button className="flex justify-end text-sm font-medium whitespace-nowrap">
+            コードを入力して更新
           </button>
         </div>
       </UpdateDiscountForm>
@@ -190,7 +190,7 @@ function CartCheckoutActions({checkoutUrl}: {checkoutUrl: string}) {
     <div className="flex flex-col mt-2">
       <a href={checkoutUrl} target="_self">
         <Button as="span" width="full">
-          Continue to Checkout
+          チェックアウトに進む
         </Button>
       </a>
       {/* @todo: <CartShopPayButton cart={cart} /> */}
@@ -215,11 +215,11 @@ function CartSummary({
   return (
     <section aria-labelledby="summary-heading" className={summary[layout]}>
       <h2 id="summary-heading" className="sr-only">
-        Order summary
+        注文内容
       </h2>
       <dl className="grid">
         <div className="flex items-center justify-between font-medium">
-          <Text as="dt">Subtotal</Text>
+          <Text as="dt">小計</Text>
           <Text as="dd" data-test="subtotal">
             {cost?.subtotalAmount?.amount ? (
               <Money data={cost?.subtotalAmount} />

@@ -294,7 +294,7 @@ function collectionsJsonLd({
   return {
     '@context': 'https://schema.org',
     '@type': 'CollectionPage',
-    name: 'Collections',
+    name: 'すべてのカテゴリ',
     description: 'All collections',
     url,
     mainEntity: {
@@ -312,8 +312,8 @@ function listCollections({
   url: Request['url'];
 }): SeoConfig {
   return {
-    title: 'Collections',
-    titleTemplate: '%s | Collections',
+    title: 'すべてのカテゴリ',
+    titleTemplate: '%s | すべてのカテゴリ',
     description: 'All hydrogen collections',
     url,
     jsonLd: collectionsJsonLd({collections, url}),

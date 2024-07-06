@@ -12,7 +12,7 @@ type FeaturedCollectionsProps = HomepageFeaturedCollectionsQuery & {
 
 export function FeaturedCollections({
   collections,
-  title = 'Collections',
+  title = 'おすすめのカテゴリ',
   ...props
 }: FeaturedCollectionsProps) {
   const haveCollections = collections?.nodes?.length > 0;

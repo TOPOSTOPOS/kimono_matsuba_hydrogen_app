@@ -2,6 +2,12 @@ import type {Localizations} from '~/lib/type';
 
 export const countries: Localizations = {
   default: {
+    label: '日本 (円 ¥)',
+    language: 'EN',
+    country: 'JP',
+    currency: 'JPY',
+  },
+  '/en-us': {
     label: 'United States (USD $)',
     language: 'EN',
     country: 'US',
@@ -114,12 +120,6 @@ export const countries: Localizations = {
     language: 'EN',
     country: 'IT',
     currency: 'EUR',
-  },
-  '/en-jp': {
-    label: 'Japan (JPY ¥)',
-    language: 'EN',
-    country: 'JP',
-    currency: 'JPY',
   },
   '/en-kr': {
     label: 'South Korea (KRW ₩)',

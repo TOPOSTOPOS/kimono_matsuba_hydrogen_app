@@ -188,7 +188,7 @@ export function IconHelp(props: IconProps) {
 export function IconSearch(props: IconProps) {
   return (
     <Icon {...props}>
-      <title>Search</title>
+      <title>検索結果</title>
       <path
         fillRule="evenodd"
         d="M13.3 8.52a4.77 4.77 0 1 1-9.55 0 4.77 4.77 0 0 1 9.55 0Zm-.98 4.68a6.02 6.02 0 1 1 .88-.88l4.3 4.3-.89.88-4.3-4.3Z"

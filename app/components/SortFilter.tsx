@@ -116,7 +116,7 @@ export function FiltersDrawer({
         ) : null}
 
         <Heading as="h4" size="lead" className="pb-4">
-          Filter By
+          絞り込み条件
         </Heading>
         <div className="divide-y">
           {filters.map((filter: Filter) => (
@@ -154,7 +154,7 @@ function AppliedFilters({filters = []}: {filters: AppliedFilter[]}) {
   return (
     <>
       <Heading as="h4" size="lead" className="pb-4">
-        Applied filters
+        絞り込みワード
       </Heading>
       <div className="flex flex-wrap gap-2">
         {filters.map((filter: AppliedFilter) => {
@@ -336,7 +336,7 @@ export default function SortMenu() {
     <Menu as="div" className="relative z-40">
       <Menu.Button className="flex items-center">
         <span className="px-2">
-          <span className="px-2 font-medium">Sort by:</span>
+          <span className="px-2 font-medium">並び順：</span>
           <span>{(activeItem || items[0]).label}</span>
         </span>
         <IconCaret />

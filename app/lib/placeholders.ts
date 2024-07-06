@@ -9,7 +9,7 @@ const PLACEHOLDERS = {
       byline: {
         value: 'The All New Hydrogen Snowboard Exclusively From Shopify',
       },
-      cta: {value: 'Shop Now →'},
+      cta: {value: '詳しく見る'},
       handle: 'freestyle',
       spread: {
         reference: {
@@ -51,7 +51,7 @@ const PLACEHOLDERS = {
     {
       heading: {value: 'From the Slopes to the Chalet'},
       byline: null,
-      cta: {value: 'Shop Now →'},
+      cta: {value: '詳しく見る'},
       handle: 'backcountry',
       spread: {
         reference: {
@@ -90,7 +90,7 @@ const PLACEHOLDERS = {
     {
       heading: {value: 'The Winter 2022 Collection'},
       byline: {value: 'Just Dropped'},
-      cta: {value: 'Shop Now →'},
+      cta: {value: '詳しく見る'},
       handle: 'winter-2022',
       spread: {
         reference: {

@@ -12,7 +12,7 @@ type ProductSwimlaneProps = HomepageFeaturedProductsQuery & {
 };
 
 export function ProductSwimlane({
-  title = 'Featured Products',
+  title = 'おすすめ商品',
   products = mockProducts,
   count = 12,
   ...props

@@ -54,7 +54,7 @@ export default function Collections() {
 
   return (
     <>
-      <PageHeader heading="Collections" />
+      <PageHeader heading="すべてのコレクション" />
       <Section>
         <Pagination connection={collections}>
           {({nodes, isLoading, PreviousLink, NextLink}) => (
