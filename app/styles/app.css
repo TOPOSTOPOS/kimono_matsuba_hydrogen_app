@@ -23,8 +23,8 @@
   }
   @media (min-width: 48em) {
     --height-nav: 6rem;
-    --font-size-heading: 2.25rem; /* text-4xl */
-    --font-size-display: 3.75rem; /* text-6xl */
+    --font-size-heading: 2rem; /* text-2xl */
+    --font-size-display: 2.25rem; /* text-3xl */
   }
   @supports (height: 100svh) {
     --screen-height: 100svh;
@@ -63,7 +63,7 @@ shop-pay-button {
   }
 
   body {
-    @apply border-primary/10 bg-contrast text-primary/90 antialiased;
+    @apply antialiased border-primary/10 bg-contrast text-primary/90;
   }
 
   html {
@@ -112,7 +112,7 @@ shop-pay-button {
     h6 {
       @apply font-sans text-primary;
     }
-    @apply prose mx-auto mb-12 grid justify-center font-serif text-primary;
+    @apply grid justify-center mx-auto mb-12 font-serif prose text-primary;
     p,
     ul,
     li {
@@ -132,7 +132,7 @@ shop-pay-button {
   }
 
   .swimlane {
-    @apply grid w-full snap-x snap-mandatory scroll-px-6 grid-flow-col justify-start gap-4 overflow-x-scroll px-6 pb-4;
+    @apply grid justify-start w-full grid-flow-col gap-4 px-6 pb-4 overflow-x-scroll snap-x snap-mandatory scroll-px-6;
   }
 }
 
@@ -150,7 +150,7 @@ shop-pay-button {
   }
 
   .absolute-center {
-    @apply absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2;
+    @apply absolute -translate-x-1/2 -translate-y-1/2 top-1/2 left-1/2;
   }
 
   .strike {
@@ -170,10 +170,10 @@ shop-pay-button {
   }
 
   .card-image {
-    @apply relative flex items-center justify-center overflow-clip rounded;
+    @apply relative flex items-center justify-center rounded overflow-clip;
     &::before {
       content: ' ';
-      @apply absolute top-0 left-0 z-10 block h-full w-full rounded shadow-border;
+      @apply absolute top-0 left-0 z-10 block w-full h-full rounded shadow-border;
     }
     img {
       @apply aspect-[inherit] w-full object-cover;
