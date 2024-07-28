@@ -46,7 +46,7 @@ export async function loader(args: LoaderFunctionArgs) {
 async function loadCriticalData({context}: LoaderFunctionArgs) {
   const [{shop, hero}] = await Promise.all([
     context.storefront.query(HOMEPAGE_SEO_QUERY, {
-      variables: {handle: 'freestyle'},
+      variables: {handle: 'all'},
     }),
     // Add other queries here, so that they are loaded in parallel
   ]);
@@ -88,7 +88,7 @@ function loadDeferredData({context}: LoaderFunctionArgs) {
   const secondaryHero = context.storefront
     .query(COLLECTION_HERO_QUERY, {
       variables: {
-        handle: 'backcountry',
+        handle: 'furisode',
         country,
         language,
       },
@@ -117,7 +117,7 @@ function loadDeferredData({context}: LoaderFunctionArgs) {
   const tertiaryHero = context.storefront
     .query(COLLECTION_HERO_QUERY, {
       variables: {
-        handle: 'winter-2022',
+        handle: 'yukata',
         country,
         language,
       },
