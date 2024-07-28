@@ -29,7 +29,9 @@ export function Footer({menu}: {menu?: EnhancedMenu}) {
         bg-white dark:bg-contrast dark:text-primary text-contrast overflow-hidden`}
     >
       <FooterMenu menu={menu} />
-      <CountrySelector />
+      <div className="hidden">
+        <CountrySelector />
+      </div>
 
       <FooterSns />
 

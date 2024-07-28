@@ -31,7 +31,7 @@ function root({
 }): SeoConfig {
   return {
     title: shop?.name,
-    titleTemplate: '%s | Hydrogen Demo Store',
+    titleTemplate: '%s | 着物レンタルモールhataori(ハタオリ)',
     description: truncate(shop?.description ?? ''),
     handle: '@shopify',
     url,
@@ -45,7 +45,7 @@ function root({
       name: shop.name,
       logo: shop.brand?.logo?.image?.url,
       sameAs: [
-        'https://twitter.com/shopify',
+        'https://x.com/shopify',
         'https://facebook.com/shopify',
         'https://instagram.com/shopify',
         'https://youtube.com/shopify',
@@ -63,9 +63,10 @@ function root({
 
 function home(): SeoConfig {
   return {
-    title: 'Home',
-    titleTemplate: '%s | Hydrogen Demo Store',
-    description: 'The best place to buy snowboarding products',
+    title: 'トップページ',
+    titleTemplate: '%s | 着物レンタルモールhataori(ハタオリ)',
+    description:
+      '【着物レンタルモールhataori】hataoriは日本最大級の着物レンタルサイトです。日本の伝統文化である着物を、お手ごろな価格でお楽しみいただけます。ご利用日の2日前に届き、使い終わった次の日に箱に入れて送るだけの簡単返却。1月利用は7泊8日。全国一律・往復送料無料。後払いOK。',
     robots: {
       noIndex: false,
       noFollow: false,
