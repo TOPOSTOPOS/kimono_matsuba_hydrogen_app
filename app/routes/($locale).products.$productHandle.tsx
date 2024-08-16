@@ -94,9 +94,11 @@ async function loadCriticalData({
       );
       return orderA - orderB;
     })
-    .map((node) => node.fields.find((field) => field.key === 'time')?.value);
-
-  console.log(sortedDeliverTimeOptions);
+    .map(
+      (node) =>
+        node.fields.find((field) => field.key === 'time')?.value || null,
+    )
+    .filter((value) => value != null);
 
   if (sortedDeliverTimeOptions.length == 0) {
     throw new Response('delivery time options not found', {status: 404});

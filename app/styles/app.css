@@ -181,14 +181,13 @@ shop-pay-button {
   }
 }
 
-
 .react-datepicker-wrapper,
 .react-datepicker__input-container {
   display: block;
   width: 100%;
 }
 
-/* 曜日から上のヘッダー部分 */ 
+/* 曜日から上のヘッダー部分 */
 .react-datepicker__header {
   background-color: #fff;
 }
@@ -198,14 +197,14 @@ shop-pay-button {
 .react-datepicker__time-container {
   border-color: #fff;
 }
- 
+
 /* 日付ホバー時 */
 .react-datepicker__day:hover {
   background: #141414 !important;
   color: #fafafa;
 }
 
- /* 曜日 */ 
+/* 曜日 */
 .react-datepicker__day-name {
   color: rgba(0, 0, 0, 0.54);
 }
@@ -236,7 +235,7 @@ shop-pay-button {
   color: #fafafa;
 }
 
-/* 選択中の日付 */ 
+/* 選択中の日付 */
 .react-datepicker__day--in-selecting-range:not(
     .react-datepicker__day--in-range,
     .react-datepicker__month-text--in-range,
@@ -265,9 +264,9 @@ shop-pay-button {
 }
 
 .react-datepicker__calendar-icon {
-  @apply top-1/2 -translate-y-1/2
+  @apply top-1/2 -translate-y-1/2;
 }
 
 .react-datepicker__input-container input {
-  @apply w-full relative w-full !py-[0.52rem] !px-3 text-left bg-white border border-gray-300 rounded-lg shadow-md cursor-default focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary sm:text-sm !text-[#141414]
+  @apply w-full relative w-full !py-[0.52rem] !px-3 text-left bg-white border border-gray-300 rounded-lg shadow-md cursor-default focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary sm:text-sm !text-[#141414];
 }
