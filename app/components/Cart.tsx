@@ -244,7 +244,7 @@ function CartLineItem({line}: {line: CartLine}) {
 
   if (!line?.id) return null;
 
-  const {id, quantity, merchandise} = line;
+  const {id, quantity, merchandise, attributes} = line;
 
   if (typeof quantity === 'undefined' || !merchandise?.product) return null;
 
@@ -286,6 +286,14 @@ function CartLineItem({line}: {line: CartLine}) {
             {(merchandise?.selectedOptions || []).map((option) => (
               <Text color="subtle" key={option.name}>
                 {option.name}: {option.value}
+              </Text>
+            ))}
+          </div>
+
+          <div className="grid pb-2">
+            {(attributes || []).map((attr) => (
+              <Text color="subtle" key={attr.key}>
+                {attr.key}: {attr.value}
               </Text>
             ))}
           </div>

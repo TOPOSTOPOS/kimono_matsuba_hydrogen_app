@@ -17,6 +17,10 @@ import {
 } from '@shopify/hydrogen';
 import invariant from 'tiny-invariant';
 import clsx from 'clsx';
+import DatePicker, {registerLocale} from 'react-datepicker';
+import 'react-datepicker/dist/react-datepicker.css';
+import {subDays} from 'date-fns';
+import {ja} from 'date-fns/locale/ja';
 
 import type {
   ProductQuery,
@@ -65,7 +69,7 @@ async function loadCriticalData({
 
   const selectedOptions = getSelectedProductOptions(request);
 
-  const [{shop, product}] = await Promise.all([
+  const [{shop, product}, deliverTimeOptions] = await Promise.all([
     context.storefront.query(PRODUCT_QUERY, {
       variables: {
         handle: productHandle,
@@ -74,8 +78,29 @@ async function loadCriticalData({
         language: context.storefront.i18n.language,
       },
     }),
+    context.storefront.query(DELIVERY_TIME_OPTIONS_QUERY),
     // Add other queries here, so that they are loaded in parallel
   ]);
+
+  const sortedDeliverTimeOptions = deliverTimeOptions.metaobjects.nodes
+    .sort((a, b) => {
+      const orderA = parseInt(
+        a.fields.find((field) => field.key === 'sort_order')?.value || '0',
+        10,
+      );
+      const orderB = parseInt(
+        b.fields.find((field) => field.key === 'sort_order')?.value || '0',
+        10,
+      );
+      return orderA - orderB;
+    })
+    .map((node) => node.fields.find((field) => field.key === 'time')?.value);
+
+  console.log(sortedDeliverTimeOptions);
+
+  if (sortedDeliverTimeOptions.length == 0) {
+    throw new Response('delivery time options not found', {status: 404});
+  }
 
   if (!product?.id) {
     throw new Response('product', {status: 404});
@@ -104,6 +129,7 @@ async function loadCriticalData({
     storeDomain: shop.primaryDomain.url,
     recommended,
     seo,
+    sortedDeliverTimeOptions,
   };
 }
 
@@ -248,7 +274,30 @@ export function ProductForm({
 }: {
   variants: ProductVariantFragmentFragment[];
 }) {
-  const {product, storeDomain} = useLoaderData<typeof loader>();
+  const {product, storeDomain, sortedDeliverTimeOptions} =
+    useLoaderData<typeof loader>();
+
+  const currentDate = new Date();
+  currentDate.setDate(currentDate.getDate() + 7);
+  const minDate = currentDate;
+
+  const minDeliveryDate = new Date();
+  minDeliveryDate.setDate(minDeliveryDate.getDate() + 3);
+
+  const [selectedStartDate, setSelectedStartDate] = useState(minDate);
+  const [displayDeliveryDate, setDisplayDeliveryDate] =
+    useState(minDeliveryDate);
+
+  const onChangeStartDate = (date: Date) => {
+    setSelectedStartDate(date || minDate);
+
+    const deliveryDate = subDays(date, 4);
+    setDisplayDeliveryDate(deliveryDate);
+  };
+
+  registerLocale('ja', ja);
+
+  const [deliveryTime, setDeliveryTime] = useState(sortedDeliverTimeOptions[0]);
 
   const closeRef = useRef<HTMLButtonElement>(null);
 
@@ -265,72 +314,99 @@ export function ProductForm({
     selectedVariant?.compareAtPrice?.amount &&
     selectedVariant?.price?.amount < selectedVariant?.compareAtPrice?.amount;
 
-  const [rentalPeriod, setRentalPeriod] = useState('1日');
-
   const navigate = useNavigate();
 
   return (
     <form className="grid gap-10" encType="multipart/form-data">
       <div className="grid gap-4">
-        <Listbox value={rentalPeriod} onChange={setRentalPeriod}>
-          <Listbox.Label className="block mb-1 text-sm font-medium text-gray-900">
-            レンタル期間
-          </Listbox.Label>
+        {!isOutOfStock && (
+          <div>
+            <div className="grid gap-2">
+              <div>
+                <Listbox>
+                  <Listbox.Label className="block mb-1 text-sm font-medium text-gray-900">
+                    ご利用開始日
+                  </Listbox.Label>
 
-          {isOutOfStock ? (
-            <div className="relative mt-1">
-              <Text>SOLDOUTのため期間設定はできません</Text>
-            </div>
-          ) : (
-            <div className="relative mt-1">
-              <Listbox.Button className="relative w-full py-2 pl-3 pr-10 text-left bg-white border border-gray-300 rounded-lg shadow-md cursor-default focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary sm:text-sm">
-                <span className="block truncate">{rentalPeriod}</span>
-                <span className="absolute inset-y-0 right-0 flex items-center pr-2 pointer-events-none">
-                  <IconCaret />
-                </span>
-              </Listbox.Button>
-              <Listbox.Options className="absolute z-10 w-full py-1 mt-1 overflow-auto text-base bg-white rounded-md shadow-lg max-h-60 ring-1 ring-black ring-opacity-5 focus:outline-none sm:text-sm">
-                {['1日', '3日', '7日', '14日', '30日'].map((period) => (
-                  <Listbox.Option
-                    key={period}
-                    value={period}
-                    className={({active}) =>
-                      clsx(
-                        active
-                          ? 'text-primary bg-primary-light'
-                          : 'text-gray-900',
-                        'cursor-default select-none relative py-2 pl-10 pr-4',
-                      )
-                    }
-                  >
-                    {({selected, active}) => (
-                      <>
-                        <span
-                          className={clsx(
-                            selected ? 'font-medium' : 'font-normal',
-                            'block truncate',
-                          )}
+                  <DatePicker
+                    toggleCalendarOnIconClick
+                    selected={selectedStartDate}
+                    dateFormat="yyyy/MM/dd"
+                    minDate={minDate}
+                    locale="ja"
+                    onChange={(date) => {
+                      onChangeStartDate(date as Date);
+                    }}
+                  />
+                </Listbox>
+              </div>
+              <div>
+                <Listbox>
+                  <Listbox.Label className="block mb-1 text-sm font-medium text-gray-900">
+                    到着日
+                  </Listbox.Label>
+                  {displayDeliveryDate.toLocaleDateString()}
+                </Listbox>
+              </div>
+              <div>
+                <Listbox value={deliveryTime} onChange={setDeliveryTime}>
+                  <Listbox.Label className="block mb-1 text-sm font-medium text-gray-900">
+                    配送時間
+                  </Listbox.Label>
+                  <div className="relative mt-1">
+                    <Listbox.Button className="relative w-full py-2 pl-3 pr-10 text-left bg-white border border-gray-300 rounded-lg shadow-md cursor-default focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary sm:text-sm">
+                      <span className="block truncate">{deliveryTime}</span>
+                      <span className="absolute inset-y-0 right-0 flex items-center pr-2 pointer-events-none">
+                        <IconCaret />
+                      </span>
+                    </Listbox.Button>
+                    <Listbox.Options className="absolute z-10 w-full py-1 mt-1 overflow-auto text-base bg-white rounded-md shadow-lg max-h-60 ring-1 ring-black ring-opacity-5 focus:outline-none sm:text-sm">
+                      {sortedDeliverTimeOptions.map((item) => (
+                        <Listbox.Option
+                          key={item}
+                          value={item}
+                          className={({active}) =>
+                            clsx(
+                              active
+                                ? 'text-primary bg-primary-light'
+                                : 'text-gray-900',
+                              'cursor-default select-none relative py-2 pl-10 pr-4',
+                            )
+                          }
                         >
-                          {period}
-                        </span>
-                        {selected ? (
-                          <span
-                            className={clsx(
-                              active ? 'text-primary' : 'text-primary-dark',
-                              'absolute inset-y-0 left-0 flex items-center pl-3',
-                            )}
-                          >
-                            <IconCheck />
-                          </span>
-                        ) : null}
-                      </>
-                    )}
-                  </Listbox.Option>
-                ))}
-              </Listbox.Options>
+                          {({selected, active}) => (
+                            <>
+                              <span
+                                className={clsx(
+                                  selected ? 'font-medium' : 'font-normal',
+                                  'block truncate',
+                                )}
+                              >
+                                {item}
+                              </span>
+                              {selected ? (
+                                <span
+                                  className={clsx(
+                                    active
+                                      ? 'text-primary'
+                                      : 'text-primary-dark',
+                                    'absolute inset-y-0 left-0 flex items-center pl-3',
+                                  )}
+                                >
+                                  <IconCheck />
+                                </span>
+                              ) : null}
+                            </>
+                          )}
+                        </Listbox.Option>
+                      ))}
+                    </Listbox.Options>
+                  </div>
+                </Listbox>
+              </div>
             </div>
-          )}
-        </Listbox>
+          </div>
+        )}
         <VariantSelector
           handle={product.handle}
           options={product.options.filter((option) => option.values.length > 1)}
@@ -451,19 +527,31 @@ export function ProductForm({
                   {
                     merchandiseId: selectedVariant.id!,
                     quantity: 1,
+                    attributes: [
+                      {
+                        key: 'レンタル開始日',
+                        value: selectedStartDate.toLocaleDateString(),
+                      },
+                      {
+                        key: '配送日',
+                        value: displayDeliveryDate.toLocaleDateString(),
+                      },
+                      {
+                        key: '配送時間',
+                        value: deliveryTime,
+                      },
+                    ],
                   },
                 ]}
                 variant="primary"
                 data-test="add-to-cart"
                 quantity={1}
-                customAttributes={[{key: 'Rental Period', value: rentalPeriod}]}
               >
                 <Text
                   as="span"
                   className="flex items-center justify-center gap-2"
                 >
                   <span className="font-bold">カートに追加</span> <span>·</span>{' '}
-                  <span className="block truncate">{rentalPeriod}</span>
                   <Money
                     withoutTrailingZeros
                     data={selectedVariant?.price!}
@@ -735,3 +823,16 @@ async function getRecommendedProducts(
 
   return {nodes: mergedProducts};
 }
+
+const DELIVERY_TIME_OPTIONS_QUERY = `#graphql
+query DeliverTimeOptions {
+  metaobjects(type: "sagawa_delivery_time_classifications", first: 100) {
+    nodes {
+      fields {
+        key
+        value
+      }
+    }
+  }
+}
+` as const;
