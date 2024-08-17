@@ -540,7 +540,7 @@ export function ProductForm({
                       },
                       {
                         key: '配送時間',
-                        value: deliveryTime,
+                        value: deliveryTime || '',
                       },
                     ],
                   },
