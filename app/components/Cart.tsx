@@ -54,6 +54,7 @@ export function CartDetails({
 }) {
   // @todo: get optimistic cart cost
   const cartHasItems = !!cart && cart.totalQuantity > 0;
+  const isDisableCheckoutAction = !!cart && cart.totalQuantity != 1;
   const container = {
     drawer: 'grid grid-cols-1 h-screen-no-nav grid-rows-[1fr_auto]',
     page: 'w-full pb-12 grid md:grid-cols-2 md:items-start gap-8 md:gap-8 lg:gap-12',
@@ -65,7 +66,10 @@ export function CartDetails({
       {cartHasItems && (
         <CartSummary cost={cart.cost} layout={layout}>
           <CartDiscounts discountCodes={cart.discountCodes} />
-          <CartCheckoutActions checkoutUrl={cart.checkoutUrl} />
+          <CartCheckoutActions
+            checkoutUrl={cart.checkoutUrl}
+            disabled={isDisableCheckoutAction}
+          />
         </CartSummary>
       )}
     </div>
@@ -183,16 +187,39 @@ function CartLines({
   );
 }
 
-function CartCheckoutActions({checkoutUrl}: {checkoutUrl: string}) {
+function CartCheckoutActions({
+  checkoutUrl,
+  disabled,
+}: {
+  checkoutUrl: string;
+  disabled: boolean;
+}) {
   if (!checkoutUrl) return null;
 
   return (
     <div className="flex flex-col mt-2">
-      <a href={checkoutUrl} target="_self">
-        <Button as="span" width="full">
-          チェックアウトに進む
-        </Button>
-      </a>
+      {disabled ? (
+        <div>
+          <Button
+            as="span"
+            width="full"
+            disabled={true}
+            className="inline-block px-6 py-3 font-medium text-center text-white rounded bg-slate-300"
+          >
+            チェックアウトに進む
+          </Button>
+          <p className="mt-2 text-sm text-center text-red-500">
+            ※ 商品は1点のみチェックアウトできます
+          </p>
+        </div>
+      ) : (
+        <a href={checkoutUrl} target="_self">
+          <Button as="span" width="full">
+            チェックアウトに進む
+          </Button>
+        </a>
+      )}
+
       {/* @todo: <CartShopPayButton cart={cart} /> */}
     </div>
   );
