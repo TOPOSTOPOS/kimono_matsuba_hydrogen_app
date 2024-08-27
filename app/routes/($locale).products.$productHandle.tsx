@@ -69,7 +69,7 @@ async function loadCriticalData({
 
   const selectedOptions = getSelectedProductOptions(request);
 
-  const [{shop, product}, deliverTimeOptions] = await Promise.all([
+  const [{shop, product}, deliverTimeOptions, cart] = await Promise.all([
     context.storefront.query(PRODUCT_QUERY, {
       variables: {
         handle: productHandle,
@@ -79,6 +79,7 @@ async function loadCriticalData({
       },
     }),
     context.storefront.query(DELIVERY_TIME_OPTIONS_QUERY),
+    context.cart.get(),
     // Add other queries here, so that they are loaded in parallel
   ]);
 
@@ -132,6 +133,7 @@ async function loadCriticalData({
     recommended,
     seo,
     sortedDeliverTimeOptions,
+    cart,
   };
 }
 
@@ -185,9 +187,12 @@ function redirectToFirstVariant({
 }
 
 export default function Product() {
-  const {product, shop, recommended, variants} = useLoaderData<typeof loader>();
+  const {product, shop, recommended, variants, cart} =
+    useLoaderData<typeof loader>();
   const {media, title, vendor, descriptionHtml} = product;
   const {shippingPolicy, refundPolicy} = shop;
+
+  const isDisableAddToCart = !!cart && cart.totalQuantity >= 1;
 
   return (
     <>
@@ -207,7 +212,11 @@ export default function Product() {
                   <Text className={'opacity-50 font-medium'}>{vendor}</Text>
                 )}
               </div>
-              <Suspense fallback={<ProductForm variants={[]} />}>
+              <Suspense
+                fallback={
+                  <ProductForm variants={[]} isDisableAddToCart={true} />
+                }
+              >
                 <Await
                   errorElement="There was a problem loading related products"
                   resolve={variants}
@@ -215,6 +224,7 @@ export default function Product() {
                   {(resp) => (
                     <ProductForm
                       variants={resp.product?.variants.nodes || []}
+                      isDisableAddToCart={isDisableAddToCart}
                     />
                   )}
                 </Await>
@@ -273,8 +283,10 @@ export default function Product() {
 
 export function ProductForm({
   variants,
+  isDisableAddToCart,
 }: {
   variants: ProductVariantFragmentFragment[];
+  isDisableAddToCart: boolean;
 }) {
   const {product, storeDomain, sortedDeliverTimeOptions} =
     useLoaderData<typeof loader>();
@@ -596,58 +608,71 @@ export function ProductForm({
                 <Text>SOLD OUT</Text>
               </Button>
             ) : (
-              <AddToCartButton
-                lines={[
-                  {
-                    merchandiseId: selectedVariant.id!,
-                    quantity: 1,
-                    attributes: [
-                      {
-                        key: '帯の有無',
-                        value: selectedBeltOption,
-                      },
-                      {
-                        key: 'レンタル開始日',
-                        value: selectedStartDate.toLocaleDateString(),
-                      },
-                      {
-                        key: '配送日',
-                        value: displayDeliveryDate.toLocaleDateString(),
-                      },
-                      {
-                        key: '配送時間',
-                        value: deliveryTime || '',
-                      },
-                    ],
-                  },
-                ]}
-                variant="primary"
-                data-test="add-to-cart"
-                quantity={1}
-              >
-                <Text
-                  as="span"
-                  className="flex items-center justify-center gap-2"
+              <div>
+                <AddToCartButton
+                  lines={[
+                    {
+                      merchandiseId: selectedVariant.id!,
+                      quantity: 1,
+                      attributes: [
+                        {
+                          key: '帯の有無',
+                          value: selectedBeltOption,
+                        },
+                        {
+                          key: 'レンタル開始日',
+                          value: selectedStartDate.toLocaleDateString(),
+                        },
+                        {
+                          key: '配送日',
+                          value: displayDeliveryDate.toLocaleDateString(),
+                        },
+                        {
+                          key: '配送時間',
+                          value: deliveryTime || '',
+                        },
+                      ],
+                    },
+                  ]}
+                  variant="primary"
+                  data-test="add-to-cart"
+                  quantity={1}
+                  disabled={isDisableAddToCart}
+                  className={clsx(
+                    'inline-block px-6 py-3 font-medium text-center rounded bg-primary text-contrast',
+                    isDisableAddToCart && 'opacity-50',
+                  )}
                 >
-                  <span className="font-bold">カートに追加</span> <span>·</span>{' '}
-                  <Money
-                    withoutTrailingZeros
-                    data={selectedVariant?.price!}
+                  <Text
                     as="span"
-                    data-test="price"
-                  />
-                  {isOnSale && (
+                    className="flex items-center justify-center gap-2"
+                  >
+                    <span className="font-bold">カートに追加</span>{' '}
+                    <span>·</span>{' '}
                     <Money
                       withoutTrailingZeros
-                      data={selectedVariant?.compareAtPrice!}
+                      data={selectedVariant?.price!}
                       as="span"
-                      className="opacity-50 strike"
+                      data-test="price"
                     />
-                  )}
-                </Text>
-              </AddToCartButton>
+                    {isOnSale && (
+                      <Money
+                        withoutTrailingZeros
+                        data={selectedVariant?.compareAtPrice!}
+                        as="span"
+                        className="opacity-50 strike"
+                      />
+                    )}
+                  </Text>
+                </AddToCartButton>
+                {isDisableAddToCart && (
+                  <p className="mt-2 text-sm text-center text-red-500">
+                    ※ カートに商品が入っているため追加できません
+                  </p>
+                )}
+              </div>
             )}
-            {!isOutOfStock && (
+            {!isOutOfStock && !isDisableAddToCart && (
               <ShopPayButton
                 width="100%"
                 variantIds={[selectedVariant?.id!]}
