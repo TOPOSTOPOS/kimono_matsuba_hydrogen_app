@@ -1,3 +1,4 @@
+import type {ChangeEvent} from 'react';
 import {useRef, Suspense, useState} from 'react';
 import {Disclosure, Listbox} from '@headlessui/react';
 import {
@@ -213,7 +214,7 @@ export default function Product() {
   const {media, title, vendor, descriptionHtml} = product;
   const {shippingPolicy, refundPolicy} = shop;
 
-  const isDisableAddToCart = !!cart && cart.totalQuantity >= 1;
+  const cartTotalQuantity = cart ? cart.totalQuantity : 0;
 
   return (
     <>
@@ -235,7 +236,10 @@ export default function Product() {
               </div>
               <Suspense
                 fallback={
-                  <ProductForm variants={[]} isDisableAddToCart={true} />
+                  <ProductForm
+                    variants={[]}
+                    cartTotalQuantity={cartTotalQuantity}
+                  />
                 }
               >
                 <Await
@@ -245,7 +249,7 @@ export default function Product() {
                   {(resp) => (
                     <ProductForm
                       variants={resp.product?.variants.nodes || []}
-                      isDisableAddToCart={isDisableAddToCart}
+                      cartTotalQuantity={cartTotalQuantity}
                     />
                   )}
                 </Await>
@@ -304,10 +308,10 @@ export default function Product() {
 
 export function ProductForm({
   variants,
-  isDisableAddToCart,
+  cartTotalQuantity,
 }: {
   variants: ProductVariantFragmentFragment[];
-  isDisableAddToCart: boolean;
+  cartTotalQuantity: number;
 }) {
   const {
     product,
@@ -320,27 +324,38 @@ export function ProductForm({
   const currentDate = new Date();
   currentDate.setDate(currentDate.getDate() + 7);
   const minDate = currentDate;
-
   const minDeliveryDate = new Date();
   minDeliveryDate.setDate(minDeliveryDate.getDate() + 3);
+  const isEnableBeltOptionMetafield = product.metafields.find(
+    (metafield) => metafield?.key === 'is_enable_belt_option',
+  );
+  const isEnableBeltOption = isEnableBeltOptionMetafield?.value === 'true';
+  const isEnabledTabiOption = TABI_OPTION_TAGS.some((tag) => {
+    return product.tags.includes(tag);
+  });
 
-  const [selectedStartDate, setSelectedStartDate] = useState(minDate);
-  const [displayDeliveryDate, setDisplayDeliveryDate] =
-    useState(minDeliveryDate);
+  const defaultOptionState = {
+    startDate: minDate,
+    deliveryDate: minDeliveryDate,
+    deliveryTime: sortedDeliverTimeOptions[0],
+    beltOption: null,
+    tabiTarget: null,
+    tabiSize: null,
+  };
 
-  const onChangeStartDate = (date: Date) => {
-    setSelectedStartDate(date || minDate);
+  const [optionValues, setOptionValues] = useState(defaultOptionState);
 
-    const deliveryDate = subDays(date, 4);
-    setDisplayDeliveryDate(deliveryDate);
+  const handleOptionChange = (name: string, value: string | Date) => {
+    const state = {...optionValues, [name]: value};
+
+    if (name == 'startDate') {
+      state.deliveryDate = subDays(value, 4);
+    }
+
+    setOptionValues(state);
   };
 
   registerLocale('ja', ja);
-
-  const [deliveryTime, setDeliveryTime] = useState(sortedDeliverTimeOptions[0]);
-
-  const [selectedBeltOption, setSelectedBeltOption] =
-    useState('選択してください');
 
   const closeRef = useRef<HTMLButtonElement>(null);
 
@@ -359,19 +374,48 @@ export function ProductForm({
 
   const navigate = useNavigate();
 
-  const isAvailableBeltOptionMetafield = product.metafields.find(
-    (metafield) => metafield?.key === 'is_available_belt_option',
-  );
-  const isAvailableBeltOption =
-    isAvailableBeltOptionMetafield?.value === 'true';
-  const isEnabledTabiOption = TABI_OPTION_TAGS.some((tag) => {
-    return product.tags.includes(tag);
-  });
+  const attributes = [
+    {
+      key: '帯の有無',
+      value: optionValues.beltOption || '',
+    },
+    {
+      key: '足袋タイプ',
+      value: optionValues.tabiTarget || '',
+    },
+    {
+      key: '足袋サイズ',
+      value: optionValues.tabiTarget || '',
+    },
+    {
+      key: 'レンタル開始日',
+      value: optionValues.startDate
+        ? optionValues.startDate.toLocaleDateString()
+        : '',
+    },
+    {
+      key: '配送日',
+      value: optionValues.deliveryDate
+        ? optionValues.deliveryDate.toLocaleDateString()
+        : '',
+    },
+    {
+      key: '配送時間',
+      value: optionValues.deliveryTime || '',
+    },
+  ].filter((attribute) => attribute.value !== '');
 
-  const [selectedTabiTarget, setSelectedTabiTarget] =
-    useState('選択してください');
-  const [selectedTabiSize, setSelectedTabiSize] =
-    useState('サイズを選択してください');
+  let isOptionError = false;
+  if (
+    (isEnabledTabiOption &&
+      !optionValues.tabiTarget &&
+      !optionValues.tabiSize) ||
+    (isEnableBeltOption && !optionValues.beltOption)
+  ) {
+    isOptionError = true;
+  }
+
+  const isDisableAddToCart = cartTotalQuantity >= 1 || isOptionError;
 
   return (
     <form className="grid gap-10" encType="multipart/form-data">
@@ -379,11 +423,13 @@ export function ProductForm({
         {!isOutOfStock && (
           <div>
             <div className="grid gap-2">
-              {isAvailableBeltOption && (
+              {isEnableBeltOption && (
                 <div>
                   <Listbox
-                    value={selectedBeltOption}
-                    onChange={setSelectedBeltOption}
+                    value={optionValues.beltOption}
+                    onChange={(selectedOption: string) => {
+                      handleOptionChange('beltOption', selectedOption);
+                    }}
                   >
                     <Listbox.Label className="block mb-1 text-sm font-medium text-gray-900">
                       帯の有無
@@ -391,7 +437,7 @@ export function ProductForm({
                     <div className="relative mt-1">
                       <Listbox.Button className="relative w-full py-2 pl-3 pr-10 text-left bg-white border border-gray-300 rounded-lg shadow-md cursor-default focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary sm:text-sm">
                         <span className="block truncate">
-                          {selectedBeltOption}
+                          {optionValues.beltOption || '選択してください'}
                         </span>
                         <span className="absolute inset-y-0 right-0 flex items-center pr-2 pointer-events-none">
                           <IconCaret />
@@ -448,8 +494,10 @@ export function ProductForm({
                     <div>
                       <Listbox>
                         <Listbox
-                          value={selectedTabiTarget}
-                          onChange={setSelectedTabiTarget}
+                          value={optionValues.tabiTarget}
+                          onChange={(selectedOption: string) => {
+                            handleOptionChange('tabiTarget', selectedOption);
+                          }}
                         >
                           <Listbox.Label className="block mb-1 text-sm font-medium text-gray-900">
                             足袋
@@ -457,7 +505,7 @@ export function ProductForm({
                           <div className="relative mt-1">
                             <Listbox.Button className="relative w-full py-2 pl-3 pr-10 text-left bg-white border border-gray-300 rounded-lg shadow-md cursor-default focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary sm:text-sm">
                               <span className="block truncate">
-                                {selectedTabiTarget}
+                                {optionValues.tabiTarget}
                               </span>
                               <span className="absolute inset-y-0 right-0 flex items-center pr-2 pointer-events-none">
                                 <IconCaret />
@@ -510,72 +558,75 @@ export function ProductForm({
                         </Listbox>
                       </Listbox>
                     </div>
-                    {tabiOptionTargets.includes(selectedTabiTarget) && (
-                      <div>
-                        <Listbox>
-                          <Listbox
-                            value={selectedTabiSize}
-                            onChange={setSelectedTabiSize}
-                          >
-                            <div className="relative mt-1">
-                              <Listbox.Button className="relative w-full py-2 pl-3 pr-10 text-left bg-white border border-gray-300 rounded-lg shadow-md cursor-default focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary sm:text-sm">
-                                <span className="block truncate">
-                                  {selectedTabiSize}
-                                </span>
-                                <span className="absolute inset-y-0 right-0 flex items-center pr-2 pointer-events-none">
-                                  <IconCaret />
-                                </span>
-                              </Listbox.Button>
-                              <Listbox.Options className="absolute z-10 w-full py-1 mt-1 overflow-auto text-base bg-white rounded-md shadow-lg max-h-60 ring-1 ring-black ring-opacity-5 focus:outline-none sm:text-sm">
-                                {tabiOptionSizes[selectedTabiTarget].map(
-                                  (item) => (
-                                    <Listbox.Option
-                                      key={item}
-                                      value={item}
-                                      className={({active}) =>
-                                        clsx(
-                                          active
-                                            ? 'text-primary bg-primary-light'
-                                            : 'text-gray-900',
-                                          'cursor-default select-none relative py-2 pl-10 pr-4',
-                                        )
-                                      }
-                                    >
-                                      {({selected, active}) => (
-                                        <>
-                                          <span
-                                            className={clsx(
-                                              selected
-                                                ? 'font-medium'
-                                                : 'font-normal',
-                                              'block truncate',
-                                            )}
-                                          >
-                                            {item}
-                                          </span>
-                                          {selected ? (
+                    {optionValues.tabiTarget &&
+                      tabiOptionTargets.includes(optionValues.tabiTarget) && (
+                        <div>
+                          <Listbox>
+                            <Listbox
+                              value={optionValues.tabiSize}
+                              onChange={(selectedOption: string) => {
+                                handleOptionChange('tabiSize', selectedOption);
+                              }}
+                            >
+                              <div className="relative mt-1">
+                                <Listbox.Button className="relative w-full py-2 pl-3 pr-10 text-left bg-white border border-gray-300 rounded-lg shadow-md cursor-default focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary sm:text-sm">
+                                  <span className="block truncate">
+                                    {optionValues.tabiSize}
+                                  </span>
+                                  <span className="absolute inset-y-0 right-0 flex items-center pr-2 pointer-events-none">
+                                    <IconCaret />
+                                  </span>
+                                </Listbox.Button>
+                                <Listbox.Options className="absolute z-10 w-full py-1 mt-1 overflow-auto text-base bg-white rounded-md shadow-lg max-h-60 ring-1 ring-black ring-opacity-5 focus:outline-none sm:text-sm">
+                                  {tabiOptionSizes[optionValues.tabiTarget].map(
+                                    (item) => (
+                                      <Listbox.Option
+                                        key={item}
+                                        value={item}
+                                        className={({active}) =>
+                                          clsx(
+                                            active
+                                              ? 'text-primary bg-primary-light'
+                                              : 'text-gray-900',
+                                            'cursor-default select-none relative py-2 pl-10 pr-4',
+                                          )
+                                        }
+                                      >
+                                        {({selected, active}) => (
+                                          <>
                                             <span
                                               className={clsx(
-                                                active
-                                                  ? 'text-primary'
-                                                  : 'text-primary-dark',
-                                                'absolute inset-y-0 left-0 flex items-center pl-3',
+                                                selected
+                                                  ? 'font-medium'
+                                                  : 'font-normal',
+                                                'block truncate',
                                               )}
                                             >
-                                              <IconCheck />
+                                              {item}
                                             </span>
-                                          ) : null}
-                                        </>
-                                      )}
-                                    </Listbox.Option>
-                                  ),
-                                )}
-                              </Listbox.Options>
-                            </div>
+                                            {selected ? (
+                                              <span
+                                                className={clsx(
+                                                  active
+                                                    ? 'text-primary'
+                                                    : 'text-primary-dark',
+                                                  'absolute inset-y-0 left-0 flex items-center pl-3',
+                                                )}
+                                              >
+                                                <IconCheck />
+                                              </span>
+                                            ) : null}
+                                          </>
+                                        )}
+                                      </Listbox.Option>
+                                    ),
+                                  )}
+                                </Listbox.Options>
+                              </div>
+                            </Listbox>
                           </Listbox>
-                        </Listbox>
-                      </div>
-                    )}
+                        </div>
+                      )}
                   </div>
                 </div>
               )}
@@ -585,15 +636,18 @@ export function ProductForm({
                     <Listbox.Label className="block mb-1 text-sm font-medium text-gray-900">
                       ご利用開始日
                     </Listbox.Label>
-
                     <DatePicker
                       toggleCalendarOnIconClick
-                      selected={selectedStartDate}
+                      selected={optionValues.startDate}
                       dateFormat="yyyy/MM/dd"
                       minDate={minDate}
                       locale="ja"
                       onChange={(date) => {
-                        onChangeStartDate(date as Date);
+                        if (!date) return;
+                        handleOptionChange(
+                          'startDate',
+                          date?.toLocaleDateString(),
+                        );
                       }}
                     />
                   </Listbox>
@@ -603,17 +657,24 @@ export function ProductForm({
                     <Listbox.Label className="block mb-1 text-sm font-medium text-gray-900">
                       到着日
                     </Listbox.Label>
-                    {displayDeliveryDate.toLocaleDateString()}
+                    {optionValues.deliveryDate.toLocaleDateString()}
                   </Listbox>
                 </div>
                 <div>
-                  <Listbox value={deliveryTime} onChange={setDeliveryTime}>
+                  <Listbox
+                    value={optionValues.deliveryTime}
+                    onChange={(selectedOption: string) => {
+                      handleOptionChange('deliveryTime', selectedOption);
+                    }}
+                  >
                     <Listbox.Label className="block mb-1 text-sm font-medium text-gray-900">
                       配送時間
                     </Listbox.Label>
                     <div className="relative mt-1">
                       <Listbox.Button className="relative w-full py-2 pl-3 pr-10 text-left bg-white border border-gray-300 rounded-lg shadow-md cursor-default focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary sm:text-sm">
-                        <span className="block truncate">{deliveryTime}</span>
+                        <span className="block truncate">
+                          {optionValues.deliveryTime}
+                        </span>
                         <span className="absolute inset-y-0 right-0 flex items-center pr-2 pointer-events-none">
                           <IconCaret />
                         </span>
@@ -787,32 +848,7 @@ export function ProductForm({
                     {
                       merchandiseId: selectedVariant.id!,
                       quantity: 1,
-                      attributes: [
-                        {
-                          key: '帯の有無',
-                          value: selectedBeltOption,
-                        },
-                        {
-                          key: '足袋タイプ',
-                          value: selectedTabiTarget,
-                        },
-                        {
-                          key: '足袋サイズ',
-                          value: selectedTabiSize,
-                        },
-                        {
-                          key: 'レンタル開始日',
-                          value: selectedStartDate.toLocaleDateString(),
-                        },
-                        {
-                          key: '配送日',
-                          value: displayDeliveryDate.toLocaleDateString(),
-                        },
-                        {
-                          key: '配送時間',
-                          value: deliveryTime || '',
-                        },
-                      ],
+                      attributes,
                     },
                   ]}
                   variant="primary"
@@ -847,9 +883,18 @@ export function ProductForm({
                   </Text>
                 </AddToCartButton>
                 {isDisableAddToCart && (
-                  <p className="mt-2 text-sm text-center text-red-500">
-                    ※ カートに商品が入っているため追加できません
-                  </p>
+                  <>
+                    {isOptionError && (
+                      <p className="mt-2 text-sm text-center text-red-500">
+                        ※ 選択されていない項目があります
+                      </p>
+                    )}
+                    {cartTotalQuantity >= 1 && (
+                      <p className="mt-2 text-sm text-center text-red-500">
+                        ※ カートに商品が入っているため追加できません
+                      </p>
+                    )}
+                  </>
                 )}
               </div>
             )}
@@ -1034,7 +1079,7 @@ const PRODUCT_QUERY = `#graphql
         description
         title
       }
-      metafields(identifiers: [{namespace: "custom", key: "is_available_belt_option"}]) {
+      metafields(identifiers: [{namespace: "custom", key: "is_enable_belt_option"}]) {
       ...Metafield
       }
       tags
