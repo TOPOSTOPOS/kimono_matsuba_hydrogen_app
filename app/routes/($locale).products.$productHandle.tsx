@@ -505,7 +505,7 @@ export function ProductForm({
                           <div className="relative mt-1">
                             <Listbox.Button className="relative w-full py-2 pl-3 pr-10 text-left bg-white border border-gray-300 rounded-lg shadow-md cursor-default focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary sm:text-sm">
                               <span className="block truncate">
-                                {optionValues.tabiTarget}
+                                {optionValues.tabiTarget || '選択してください'}
                               </span>
                               <span className="absolute inset-y-0 right-0 flex items-center pr-2 pointer-events-none">
                                 <IconCaret />
@@ -571,7 +571,8 @@ export function ProductForm({
                               <div className="relative mt-1">
                                 <Listbox.Button className="relative w-full py-2 pl-3 pr-10 text-left bg-white border border-gray-300 rounded-lg shadow-md cursor-default focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary sm:text-sm">
                                   <span className="block truncate">
-                                    {optionValues.tabiSize}
+                                    {optionValues.tabiSize ||
+                                      '選択してください'}
                                   </span>
                                   <span className="absolute inset-y-0 right-0 flex items-center pr-2 pointer-events-none">
                                     <IconCaret />
