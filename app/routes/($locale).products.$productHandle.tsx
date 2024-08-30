@@ -11,7 +11,6 @@ import {useLoaderData, Await, useNavigate} from '@remix-run/react';
 import {
   getSeoMeta,
   Money,
-  ShopPayButton,
   VariantSelector,
   getSelectedProductOptions,
   Analytics,
@@ -898,13 +897,6 @@ export function ProductForm({
                   </>
                 )}
               </div>
-            )}
-            {!isOutOfStock && !isDisableAddToCart && (
-              <ShopPayButton
-                width="100%"
-                variantIds={[selectedVariant?.id!]}
-                storeDomain={storeDomain}
-              />
             )}
           </div>
         )}
