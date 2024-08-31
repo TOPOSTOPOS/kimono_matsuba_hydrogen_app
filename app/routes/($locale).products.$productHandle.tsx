@@ -42,8 +42,6 @@ import {MEDIA_FRAGMENT, PRODUCT_CARD_FRAGMENT} from '~/data/fragments';
 
 export const headers = routeHeaders;
 
-const TABI_OPTION_TAGS = ['振袖'];
-
 export async function loader(args: LoaderFunctionArgs) {
   const {productHandle} = args.params;
   invariant(productHandle, 'Missing productHandle param, check route filename');
@@ -329,9 +327,10 @@ export function ProductForm({
     (metafield) => metafield?.key === 'is_enable_belt_option',
   );
   const isEnableBeltOption = isEnableBeltOptionMetafield?.value === 'true';
-  const isEnabledTabiOption = TABI_OPTION_TAGS.some((tag) => {
-    return product.tags.includes(tag);
-  });
+  const isEnableTabiOptionMetafield = product.metafields.find(
+    (metafield) => metafield?.key === 'is_enable_tabi_option',
+  );
+  const isEnableTabiOption = isEnableTabiOptionMetafield?.value === 'true';
 
   const defaultOptionState = {
     startDate: minDate,
@@ -384,7 +383,7 @@ export function ProductForm({
     },
     {
       key: '足袋サイズ',
-      value: optionValues.tabiTarget || '',
+      value: optionValues.tabiSize || '',
     },
     {
       key: 'レンタル開始日',
@@ -406,9 +405,8 @@ export function ProductForm({
 
   let isOptionError = false;
   if (
-    (isEnabledTabiOption &&
-      !optionValues.tabiTarget &&
-      !optionValues.tabiSize) ||
+    (isEnableTabiOption &&
+      (!optionValues.tabiTarget || !optionValues.tabiSize)) ||
     (isEnableBeltOption && !optionValues.beltOption)
   ) {
     isOptionError = true;
@@ -487,7 +485,7 @@ export function ProductForm({
                   </Listbox>
                 </div>
               )}
-              {isEnabledTabiOption && (
+              {isEnableTabiOption && (
                 <div>
                   <div className="grid gap-2">
                     <div>
@@ -1072,7 +1070,7 @@ const PRODUCT_QUERY = `#graphql
         description
         title
       }
-      metafields(identifiers: [{namespace: "custom", key: "is_enable_belt_option"}]) {
+      metafields(identifiers: [{namespace: "custom", key: "is_enable_belt_option"}, {namespace: "custom", key: "is_enable_tabi_option"}]) {
       ...Metafield
       }
       tags
