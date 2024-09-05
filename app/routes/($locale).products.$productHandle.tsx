@@ -339,6 +339,9 @@ export function ProductForm({
 
   const [deliveryTime, setDeliveryTime] = useState(sortedDeliverTimeOptions[0]);
 
+  const [selectedBeltOption, setSelectedBeltOption] =
+    useState('選択してください');
+
   const closeRef = useRef<HTMLButtonElement>(null);
 
   /**
@@ -356,6 +359,11 @@ export function ProductForm({
 
   const navigate = useNavigate();
 
+  const isAvailableBeltOptionMetafield = product.metafields.find(
+    (metafield) => metafield?.key === 'is_available_belt_option',
+  );
+  const isAvailableBeltOption =
+    isAvailableBeltOptionMetafield?.value === 'true';
   const isEnabledTabiOption = TABI_OPTION_TAGS.some((tag) => {
     return product.tags.includes(tag);
   });
@@ -369,146 +377,208 @@ export function ProductForm({
     <form className="grid gap-10" encType="multipart/form-data">
       <div className="grid gap-5">
         {!isOutOfStock && (
-          <>
-            {isEnabledTabiOption && (
-              <div>
-                <div className="grid gap-2">
-                  <div>
-                    <Listbox>
-                      <Listbox
-                        value={selectedTabiTarget}
-                        onChange={setSelectedTabiTarget}
-                      >
-                        <Listbox.Label className="block mb-1 text-sm font-medium text-gray-900">
-                          足袋
-                        </Listbox.Label>
-                        <div className="relative mt-1">
-                          <Listbox.Button className="relative w-full py-2 pl-3 pr-10 text-left bg-white border border-gray-300 rounded-lg shadow-md cursor-default focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary sm:text-sm">
-                            <span className="block truncate">
-                              {selectedTabiTarget}
-                            </span>
-                            <span className="absolute inset-y-0 right-0 flex items-center pr-2 pointer-events-none">
-                              <IconCaret />
-                            </span>
-                          </Listbox.Button>
-                          <Listbox.Options className="absolute z-10 w-full py-1 mt-1 overflow-auto text-base bg-white rounded-md shadow-lg max-h-60 ring-1 ring-black ring-opacity-5 focus:outline-none sm:text-sm">
-                            {tabiOptionTargets.map((item) => (
-                              <Listbox.Option
-                                key={item}
-                                value={item}
-                                className={({active}) =>
-                                  clsx(
-                                    active
-                                      ? 'text-primary bg-primary-light'
-                                      : 'text-gray-900',
-                                    'cursor-default select-none relative py-2 pl-10 pr-4',
-                                  )
-                                }
-                              >
-                                {({selected, active}) => (
-                                  <>
-                                    <span
-                                      className={clsx(
-                                        selected
-                                          ? 'font-medium'
-                                          : 'font-normal',
-                                        'block truncate',
-                                      )}
-                                    >
-                                      {item}
-                                    </span>
-                                    {selected ? (
-                                      <span
-                                        className={clsx(
-                                          active
-                                            ? 'text-primary'
-                                            : 'text-primary-dark',
-                                          'absolute inset-y-0 left-0 flex items-center pl-3',
-                                        )}
-                                      >
-                                        <IconCheck />
-                                      </span>
-                                    ) : null}
-                                  </>
-                                )}
-                              </Listbox.Option>
-                            ))}
-                          </Listbox.Options>
-                        </div>
-                      </Listbox>
-                    </Listbox>
-                  </div>
-                  {tabiOptionTargets.includes(selectedTabiTarget) && (
+          <div>
+            <div className="grid gap-2">
+              {isAvailableBeltOption && (
+                <div>
+                  <Listbox
+                    value={selectedBeltOption}
+                    onChange={setSelectedBeltOption}
+                  >
+                    <Listbox.Label className="block mb-1 text-sm font-medium text-gray-900">
+                      帯の有無
+                    </Listbox.Label>
+                    <div className="relative mt-1">
+                      <Listbox.Button className="relative w-full py-2 pl-3 pr-10 text-left bg-white border border-gray-300 rounded-lg shadow-md cursor-default focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary sm:text-sm">
+                        <span className="block truncate">
+                          {selectedBeltOption}
+                        </span>
+                        <span className="absolute inset-y-0 right-0 flex items-center pr-2 pointer-events-none">
+                          <IconCaret />
+                        </span>
+                      </Listbox.Button>
+                      <Listbox.Options className="absolute z-10 w-full py-1 mt-1 overflow-auto text-base bg-white rounded-md shadow-lg max-h-60 ring-1 ring-black ring-opacity-5 focus:outline-none sm:text-sm">
+                        {['有り', '無し'].map((item) => (
+                          <Listbox.Option
+                            key={item}
+                            value={item}
+                            className={({active}) =>
+                              clsx(
+                                active
+                                  ? 'text-primary bg-primary-light'
+                                  : 'text-gray-900',
+                                'cursor-default select-none relative py-2 pl-10 pr-4',
+                              )
+                            }
+                          >
+                            {({selected, active}) => (
+                              <>
+                                <span
+                                  className={clsx(
+                                    selected ? 'font-medium' : 'font-normal',
+                                    'block truncate',
+                                  )}
+                                >
+                                  {item}
+                                </span>
+                                {selected ? (
+                                  <span
+                                    className={clsx(
+                                      active
+                                        ? 'text-primary'
+                                        : 'text-primary-dark',
+                                      'absolute inset-y-0 left-0 flex items-center pl-3',
+                                    )}
+                                  >
+                                    <IconCheck />
+                                  </span>
+                                ) : null}
+                              </>
+                            )}
+                          </Listbox.Option>
+                        ))}
+                      </Listbox.Options>
+                    </div>
+                  </Listbox>
+                </div>
+              )}
+              {isEnabledTabiOption && (
+                <div>
+                  <div className="grid gap-2">
                     <div>
                       <Listbox>
                         <Listbox
-                          value={selectedTabiSize}
-                          onChange={setSelectedTabiSize}
+                          value={selectedTabiTarget}
+                          onChange={setSelectedTabiTarget}
                         >
+                          <Listbox.Label className="block mb-1 text-sm font-medium text-gray-900">
+                            足袋
+                          </Listbox.Label>
                           <div className="relative mt-1">
                             <Listbox.Button className="relative w-full py-2 pl-3 pr-10 text-left bg-white border border-gray-300 rounded-lg shadow-md cursor-default focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary sm:text-sm">
                               <span className="block truncate">
-                                {selectedTabiSize}
+                                {selectedTabiTarget}
                               </span>
                               <span className="absolute inset-y-0 right-0 flex items-center pr-2 pointer-events-none">
                                 <IconCaret />
                               </span>
                             </Listbox.Button>
                             <Listbox.Options className="absolute z-10 w-full py-1 mt-1 overflow-auto text-base bg-white rounded-md shadow-lg max-h-60 ring-1 ring-black ring-opacity-5 focus:outline-none sm:text-sm">
-                              {tabiOptionSizes[selectedTabiTarget].map(
-                                (item) => (
-                                  <Listbox.Option
-                                    key={item}
-                                    value={item}
-                                    className={({active}) =>
-                                      clsx(
-                                        active
-                                          ? 'text-primary bg-primary-light'
-                                          : 'text-gray-900',
-                                        'cursor-default select-none relative py-2 pl-10 pr-4',
-                                      )
-                                    }
-                                  >
-                                    {({selected, active}) => (
-                                      <>
+                              {tabiOptionTargets.map((item) => (
+                                <Listbox.Option
+                                  key={item}
+                                  value={item}
+                                  className={({active}) =>
+                                    clsx(
+                                      active
+                                        ? 'text-primary bg-primary-light'
+                                        : 'text-gray-900',
+                                      'cursor-default select-none relative py-2 pl-10 pr-4',
+                                    )
+                                  }
+                                >
+                                  {({selected, active}) => (
+                                    <>
+                                      <span
+                                        className={clsx(
+                                          selected
+                                            ? 'font-medium'
+                                            : 'font-normal',
+                                          'block truncate',
+                                        )}
+                                      >
+                                        {item}
+                                      </span>
+                                      {selected ? (
                                         <span
                                           className={clsx(
-                                            selected
-                                              ? 'font-medium'
-                                              : 'font-normal',
-                                            'block truncate',
+                                            active
+                                              ? 'text-primary'
+                                              : 'text-primary-dark',
+                                            'absolute inset-y-0 left-0 flex items-center pl-3',
                                           )}
                                         >
-                                          {item}
+                                          <IconCheck />
                                         </span>
-                                        {selected ? (
-                                          <span
-                                            className={clsx(
-                                              active
-                                                ? 'text-primary'
-                                                : 'text-primary-dark',
-                                              'absolute inset-y-0 left-0 flex items-center pl-3',
-                                            )}
-                                          >
-                                            <IconCheck />
-                                          </span>
-                                        ) : null}
-                                      </>
-                                    )}
-                                  </Listbox.Option>
-                                ),
-                              )}
+                                      ) : null}
+                                    </>
+                                  )}
+                                </Listbox.Option>
+                              ))}
                             </Listbox.Options>
                           </div>
                         </Listbox>
                       </Listbox>
                     </div>
-                  )}
+                    {tabiOptionTargets.includes(selectedTabiTarget) && (
+                      <div>
+                        <Listbox>
+                          <Listbox
+                            value={selectedTabiSize}
+                            onChange={setSelectedTabiSize}
+                          >
+                            <div className="relative mt-1">
+                              <Listbox.Button className="relative w-full py-2 pl-3 pr-10 text-left bg-white border border-gray-300 rounded-lg shadow-md cursor-default focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary sm:text-sm">
+                                <span className="block truncate">
+                                  {selectedTabiSize}
+                                </span>
+                                <span className="absolute inset-y-0 right-0 flex items-center pr-2 pointer-events-none">
+                                  <IconCaret />
+                                </span>
+                              </Listbox.Button>
+                              <Listbox.Options className="absolute z-10 w-full py-1 mt-1 overflow-auto text-base bg-white rounded-md shadow-lg max-h-60 ring-1 ring-black ring-opacity-5 focus:outline-none sm:text-sm">
+                                {tabiOptionSizes[selectedTabiTarget].map(
+                                  (item) => (
+                                    <Listbox.Option
+                                      key={item}
+                                      value={item}
+                                      className={({active}) =>
+                                        clsx(
+                                          active
+                                            ? 'text-primary bg-primary-light'
+                                            : 'text-gray-900',
+                                          'cursor-default select-none relative py-2 pl-10 pr-4',
+                                        )
+                                      }
+                                    >
+                                      {({selected, active}) => (
+                                        <>
+                                          <span
+                                            className={clsx(
+                                              selected
+                                                ? 'font-medium'
+                                                : 'font-normal',
+                                              'block truncate',
+                                            )}
+                                          >
+                                            {item}
+                                          </span>
+                                          {selected ? (
+                                            <span
+                                              className={clsx(
+                                                active
+                                                  ? 'text-primary'
+                                                  : 'text-primary-dark',
+                                                'absolute inset-y-0 left-0 flex items-center pl-3',
+                                              )}
+                                            >
+                                              <IconCheck />
+                                            </span>
+                                          ) : null}
+                                        </>
+                                      )}
+                                    </Listbox.Option>
+                                  ),
+                                )}
+                              </Listbox.Options>
+                            </div>
+                          </Listbox>
+                        </Listbox>
+                      </div>
+                    )}
+                  </div>
                 </div>
-              </div>
-            )}
-
-            <div>
+              )}
               <div className="grid gap-2">
                 <div>
                   <Listbox>
@@ -594,7 +664,7 @@ export function ProductForm({
                 </div>
               </div>
             </div>
-          </>
+          </div>
         )}
         <VariantSelector
           handle={product.handle}
@@ -718,6 +788,10 @@ export function ProductForm({
                       merchandiseId: selectedVariant.id!,
                       quantity: 1,
                       attributes: [
+                        {
+                          key: '帯の有無',
+                          value: selectedBeltOption,
+                        },
                         {
                           key: '足袋タイプ',
                           value: selectedTabiTarget,
@@ -917,6 +991,14 @@ const PRODUCT_VARIANT_FRAGMENT = `#graphql
   }
 `;
 
+const METAFIELD_FRAGMENT = `#graphql
+  fragment Metafield on Metafield {
+    id
+    key
+    value
+  }
+`;
+
 const PRODUCT_QUERY = `#graphql
   query Product(
     $country: CountryCode
@@ -952,6 +1034,9 @@ const PRODUCT_QUERY = `#graphql
         description
         title
       }
+      metafields(identifiers: [{namespace: "custom", key: "is_available_belt_option"}]) {
+      ...Metafield
+      }
       tags
     }
     shop {
@@ -971,6 +1056,7 @@ const PRODUCT_QUERY = `#graphql
   }
   ${MEDIA_FRAGMENT}
   ${PRODUCT_VARIANT_FRAGMENT}
+  ${METAFIELD_FRAGMENT}
 ` as const;
 
 const VARIANTS_QUERY = `#graphql
