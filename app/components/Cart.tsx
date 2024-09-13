@@ -53,8 +53,16 @@ export function CartDetails({
   cart: CartType | null;
 }) {
   // @todo: get optimistic cart cost
+  const lineItemConnectIds = cart?.lines?.edges?.map(
+    ({node}) =>
+      node.attributes
+        .find((attr) => attr.key === '連携ID')
+        ?.value?.split(',') || [],
+  );
+
+  const canFormPairsWithLineItems = canFormPairs(lineItemConnectIds);
   const cartHasItems = !!cart && cart.totalQuantity > 0;
-  const isDisableCheckoutAction = !!cart && cart.totalQuantity != 1;
+  const isDisableCheckoutAction = !!cart && !canFormPairsWithLineItems;
   const container = {
     drawer: 'grid grid-cols-1 h-screen-no-nav grid-rows-[1fr_auto]',
     page: 'w-full pb-12 grid md:grid-cols-2 md:items-start gap-8 md:gap-8 lg:gap-12',
@@ -209,7 +217,9 @@ function CartCheckoutActions({
             チェックアウトに進む
           </Button>
           <p className="mt-2 text-sm text-center text-red-500">
-            ※ 商品は1点のみチェックアウトできます
+            ※ カート内の商品とオプションの組み合わせが正しくありません。
+            <br />
+            削除してもう一度お試しください。
           </p>
         </div>
       ) : (
@@ -502,8 +512,34 @@ export function CartEmpty({
           layout={layout}
           onClose={onClose}
           sortKey="BEST_SELLING"
+          query="-tag:帯 AND -tag:オプション"
         />
       </section>
     </div>
   );
+}
+
+// 商品とオプションの組み合わせを作成できるかどうかを確認する関数
+function canFormPairs(arrays: string[][] | undefined): boolean {
+  if (!arrays) {
+    return false;
+  }
+
+  const countMap = new Map();
+
+  // 各配列内の要素をカウント
+  for (const arr of arrays) {
+    for (const element of arr) {
+      countMap.set(element, (countMap.get(element) || 0) + 1);
+    }
+  }
+
+  // すべての要素が偶数回出現していればペアが作れる
+  for (const count of countMap.values()) {
+    if (count % 2 !== 0) {
+      return false; // 奇数回出現している要素があればペアにできない
+    }
+  }
+
+  return true; // すべて偶数回ならペアにできる
 }
