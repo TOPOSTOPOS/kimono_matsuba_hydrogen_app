@@ -1044,37 +1044,41 @@ function BeltOptionModal({
         <div className="absolute inset-0 bg-gray-500 opacity-75"></div>
       </div>
 
-      <div className="overflow-hidden text-left transition-all transform bg-white rounded-lg shadow-xl sm:max-w-2xl sm:w-full ">
-        <div className="px-4 pt-5 pb-4 bg-white sm:p-6 sm:pb-4 h-[70%] overflow-y-scroll">
-          <p className="text-lg font-medium leading-6 text-gray-900">帯選択</p>
-          <div className="mt-4">
-            <div className="grid grid-cols-[repeat(auto-fit,minmax(160px,1fr))] gap-5">
+      <div className="text-left transition-all transform bg-white rounded-lg shadow-xl sm:max-w-2xl sm:w-full w-[calc(100%-0.625rem)] sm:h-auto max-h-[80vh] ">
+        <p className="fixed top-0 w-full p-6 text-lg font-medium leading-6 text-gray-900 bg-white">
+          帯選択
+        </p>
+        <div className="bg-white px-6 py-20 max-h-[80vh] overflow-hidden overflow-y-scroll">
+          <div className="">
+            <div className="grid sm:grid-cols-[repeat(auto-fit,minmax(160px,1fr))] grid-cols-[repeat(auto-fit,minmax(120px,1fr))] gap-5 overflow-scroll">
               {belts.map((belt) => (
-                <label
-                  className={clsx(
-                    belt.availableForSale
-                      ? 'cursor-pointer'
-                      : 'cursor-not-allowed opacity-65',
-                  )}
-                  key={belt.id}
-                >
-                  <img src={belt.src} alt={belt.title} />
-                  <div className="flex items-center mt-2 text-sm gap-x-1">
-                    <input
-                      type="checkbox"
-                      value={belt.id}
-                      onChange={selectBeltHandle}
-                      className="block text-black bg-white border rounded group size-4 !ring-black "
-                      disabled={!belt.availableForSale}
-                    />
-                    {belt.title}
-                  </div>
-                </label>
+                <>
+                  <label
+                    className={clsx(
+                      belt.availableForSale
+                        ? 'cursor-pointer'
+                        : 'cursor-not-allowed opacity-65',
+                    )}
+                    key={belt.id}
+                  >
+                    <img src={belt.src} alt={belt.title} />
+                    <div className="flex items-center my-2 ml-1 text-sm gap-x-1">
+                      <input
+                        type="checkbox"
+                        value={belt.id}
+                        onChange={selectBeltHandle}
+                        className="block text-black bg-white border rounded group size-4 !ring-black "
+                        disabled={!belt.availableForSale}
+                      />
+                      {belt.title}
+                    </div>
+                  </label>
+                </>
               ))}
             </div>
           </div>
         </div>
-        <div className="px-4 py-3 bg-gray-50 sm:px-6 sm:flex sm:flex-row-reverse">
+        <div className="fixed bottom-0 w-full px-4 py-3 bg-gray-50 sm:px-6 sm:flex sm:flex-row-reverse">
           <Button onClick={closeModalHandle}>決定</Button>
         </div>
       </div>
