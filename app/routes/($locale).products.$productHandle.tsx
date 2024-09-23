@@ -21,6 +21,7 @@ import DatePicker, {registerLocale} from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
 import {subDays} from 'date-fns';
 import {ja} from 'date-fns/locale/ja';
+import type {SelectedOption} from '@shopify/hydrogen/storefront-api-types';
 
 import type {
   ProductQuery,
@@ -126,16 +127,28 @@ async function loadCriticalData({
     throw new Response('product', {status: 404});
   }
 
-  if (!product.selectedVariant) {
-    throw redirectToFirstVariant({product, request});
-  }
-
   const recommended = getRecommendedProducts(context.storefront, product.id);
 
   // TODO: firstVariant is never used because we will always have a selectedVariant due to redirect
   // Investigate if we can avoid the redirect for product pages with no search params for first variant
   const firstVariant = product.variants.nodes[0];
   const selectedVariant = product.selectedVariant ?? firstVariant;
+
+  // MEMO: variantが設定されていない場合、URLパラメーターに追加せずにデフォルトのvariantを選択済みにする
+  const firstVariantIsDefault = Boolean(
+    firstVariant.selectedOptions.find(
+      (option: SelectedOption) =>
+        option.name === 'Title' && option.value === 'Default Title',
+    ),
+  );
+
+  if (firstVariantIsDefault) {
+    product.selectedVariant = firstVariant;
+  } else {
+    if (!product.selectedVariant) {
+      throw redirectToFirstVariant({product, request});
+    }
+  }
 
   const seo = seoPayload.product({
     product,
