@@ -163,6 +163,7 @@ function Layout({children}: {children?: React.ReactNode}) {
         )}
         <ScrollRestoration nonce={nonce} />
         <Scripts nonce={nonce} />
+        <div id="modal"></div>
       </body>
     </html>
   );

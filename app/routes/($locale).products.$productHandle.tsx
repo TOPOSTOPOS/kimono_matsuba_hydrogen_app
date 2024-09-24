@@ -1,11 +1,12 @@
 import type {ChangeEvent} from 'react';
 import {useRef, Suspense, useState} from 'react';
+import ReactDOM from 'react-dom';
 import {Disclosure, Listbox} from '@headlessui/react';
-import {
-  defer,
-  type MetaArgs,
-  redirect,
-  type LoaderFunctionArgs,
+import {defer, redirect} from '@shopify/remix-oxygen';
+import type {
+  SerializeFrom,
+  MetaArgs,
+  LoaderFunctionArgs,
 } from '@shopify/remix-oxygen';
 import {useLoaderData, Await, useNavigate} from '@remix-run/react';
 import {
@@ -21,6 +22,11 @@ import DatePicker, {registerLocale} from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
 import {subDays} from 'date-fns';
 import {ja} from 'date-fns/locale/ja';
+import type {
+  AttributeInput,
+  CartLineInput,
+} from '@shopify/hydrogen/storefront-api-types';
+import Hashids from 'hashids';
 
 import type {
   ProductQuery,
@@ -39,6 +45,7 @@ import {seoPayload} from '~/lib/seo.server';
 import type {Storefront} from '~/lib/type';
 import {routeHeaders} from '~/data/cache';
 import {MEDIA_FRAGMENT, PRODUCT_CARD_FRAGMENT} from '~/data/fragments';
+import {Modal} from '~/components/Modal';
 
 export const headers = routeHeaders;
 
@@ -130,6 +137,16 @@ async function loadCriticalData({
     throw redirectToFirstVariant({product, request});
   }
 
+  const isEnableBeltOption =
+    product.metafields.find(
+      (metafield) => metafield?.key === 'is_enable_belt_option',
+    )?.value === 'true';
+
+  let belts = null;
+  if (isEnableBeltOption) {
+    belts = await getBeltOptions(context.storefront);
+  }
+
   const recommended = getRecommendedProducts(context.storefront, product.id);
 
   // TODO: firstVariant is never used because we will always have a selectedVariant due to redirect
@@ -153,6 +170,8 @@ async function loadCriticalData({
     cart,
     tabiOptionTargets,
     tabiOptionSizes,
+    isEnableBeltOption,
+    belts,
   };
 }
 
@@ -316,6 +335,8 @@ export function ProductForm({
     sortedDeliverTimeOptions,
     tabiOptionTargets,
     tabiOptionSizes,
+    isEnableBeltOption,
+    belts,
   } = useLoaderData<typeof loader>();
 
   const currentDate = new Date();
@@ -323,10 +344,6 @@ export function ProductForm({
   const minDate = currentDate;
   const minDeliveryDate = new Date();
   minDeliveryDate.setDate(minDeliveryDate.getDate() + 3);
-  const isEnableBeltOptionMetafield = product.metafields.find(
-    (metafield) => metafield?.key === 'is_enable_belt_option',
-  );
-  const isEnableBeltOption = isEnableBeltOptionMetafield?.value === 'true';
   const isEnableTabiOptionMetafield = product.metafields.find(
     (metafield) => metafield?.key === 'is_enable_tabi_option',
   );
@@ -342,6 +359,8 @@ export function ProductForm({
   };
 
   const [optionValues, setOptionValues] = useState(defaultOptionState);
+  const [selectedBelts, setSelectedBelts] = useState<string[]>([]);
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   const handleOptionChange = (name: string, value: string | Date) => {
     const state = {...optionValues, [name]: value};
@@ -351,6 +370,15 @@ export function ProductForm({
     }
 
     setOptionValues(state);
+  };
+
+  const handleBeltChange = (event: ChangeEvent<HTMLInputElement>) => {
+    const value = event.target.value;
+    if (selectedBelts.includes(value)) {
+      setSelectedBelts(selectedBelts.filter((belt) => belt !== value));
+    } else {
+      setSelectedBelts([...selectedBelts, value]);
+    }
   };
 
   registerLocale('ja', ja);
@@ -372,10 +400,15 @@ export function ProductForm({
 
   const navigate = useNavigate();
 
-  const attributes = [
+  const attributes: AttributeInput[] = [
     {
-      key: '帯の有無',
-      value: optionValues.beltOption || '',
+      key: '帯',
+      value:
+        belts && selectedBelts.length > 0
+          ? selectedBelts
+              .map((belt) => belts.find((b) => b.id === belt)?.title)
+              .join(', ')
+          : '',
     },
     {
       key: '足袋タイプ',
@@ -401,18 +434,60 @@ export function ProductForm({
       key: '配送時間',
       value: optionValues.deliveryTime || '',
     },
+    {
+      key: '連携ID',
+      value:
+        belts && selectedBelts.length > 0
+          ? selectedBelts
+              .map((belt) => belts.find((b) => b.id === belt)?.hashId)
+              .join(',')
+          : '',
+    },
   ].filter((attribute) => attribute.value !== '');
 
   let isOptionError = false;
   if (
     (isEnableTabiOption &&
       (!optionValues.tabiTarget || !optionValues.tabiSize)) ||
-    (isEnableBeltOption && !optionValues.beltOption)
+    (isEnableBeltOption && selectedBelts.length === 0)
   ) {
     isOptionError = true;
   }
 
   const isDisableAddToCart = cartTotalQuantity >= 1 || isOptionError;
+
+  const lines: CartLineInput[] = [
+    {
+      merchandiseId: selectedVariant.id!,
+      quantity: 1,
+      attributes,
+    },
+  ];
+
+  if (isEnableBeltOption && selectedBelts.length > 0) {
+    selectedBelts.forEach((selectedBelt) => {
+      lines.unshift({
+        merchandiseId: selectedBelt,
+        quantity: 1,
+        attributes: [
+          {
+            key: '連携ID',
+            value:
+              belts?.find((belt) => belt.id === selectedBelt)?.hashId || '',
+          },
+        ],
+      });
+    });
+  }
+
+  const openModal = (e: React.MouseEvent) => {
+    e.preventDefault();
+    setIsModalOpen(true);
+  };
+  const closeModal = (e: React.MouseEvent) => {
+    e.preventDefault();
+    setIsModalOpen(false);
+  };
 
   return (
     <form className="grid gap-10" encType="multipart/form-data">
@@ -420,71 +495,39 @@ export function ProductForm({
         {!isOutOfStock && (
           <div>
             <div className="grid gap-2">
-              {isEnableBeltOption && (
+              {isEnableBeltOption && belts && (
                 <div>
-                  <Listbox
-                    value={optionValues.beltOption}
-                    onChange={(selectedOption: string) => {
-                      handleOptionChange('beltOption', selectedOption);
-                    }}
+                  <p className="block mb-1 text-sm font-medium text-gray-900">
+                    帯
+                  </p>
+                  <button
+                    onClick={openModal}
+                    className="relative w-full py-2 pl-3 pr-10 text-left bg-white border border-gray-300 rounded-lg shadow-md cursor-default focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary sm:text-sm"
                   >
-                    <Listbox.Label className="block mb-1 text-sm font-medium text-gray-900">
-                      帯の有無
-                    </Listbox.Label>
-                    <div className="relative mt-1">
-                      <Listbox.Button className="relative w-full py-2 pl-3 pr-10 text-left bg-white border border-gray-300 rounded-lg shadow-md cursor-default focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary sm:text-sm">
-                        <span className="block truncate">
-                          {optionValues.beltOption || '選択してください'}
-                        </span>
-                        <span className="absolute inset-y-0 right-0 flex items-center pr-2 pointer-events-none">
-                          <IconCaret />
-                        </span>
-                      </Listbox.Button>
-                      <Listbox.Options className="absolute z-10 w-full py-1 mt-1 overflow-auto text-base bg-white rounded-md shadow-lg max-h-60 ring-1 ring-black ring-opacity-5 focus:outline-none sm:text-sm">
-                        {['有り', '無し'].map((item) => (
-                          <Listbox.Option
-                            key={item}
-                            value={item}
-                            className={({active}) =>
-                              clsx(
-                                active
-                                  ? 'text-primary bg-primary-light'
-                                  : 'text-gray-900',
-                                'cursor-default select-none relative py-2 pl-10 pr-4',
-                              )
-                            }
-                          >
-                            {({selected, active}) => (
-                              <>
-                                <span
-                                  className={clsx(
-                                    selected ? 'font-medium' : 'font-normal',
-                                    'block truncate',
-                                  )}
-                                >
-                                  {item}
-                                </span>
-                                {selected ? (
-                                  <span
-                                    className={clsx(
-                                      active
-                                        ? 'text-primary'
-                                        : 'text-primary-dark',
-                                      'absolute inset-y-0 left-0 flex items-center pl-3',
-                                    )}
-                                  >
-                                    <IconCheck />
-                                  </span>
-                                ) : null}
-                              </>
-                            )}
-                          </Listbox.Option>
-                        ))}
-                      </Listbox.Options>
-                    </div>
-                  </Listbox>
+                    <span className="block truncate">
+                      {selectedBelts.length > 0
+                        ? selectedBelts
+                            .map(
+                              (belt) => belts.find((b) => b.id === belt)?.title,
+                            )
+                            .join(', ')
+                        : '選択してください'}
+                    </span>
+                    <span className="absolute inset-y-0 right-0 flex items-center pr-2 pointer-events-none">
+                      <IconCaret />
+                    </span>
+                  </button>
+
+                  {isModalOpen && (
+                    <BeltOptionModal
+                      closeModalHandle={closeModal}
+                      belts={belts}
+                      selectBeltHandle={handleBeltChange}
+                    />
+                  )}
                 </div>
               )}
+
               {isEnableTabiOption && (
                 <div>
                   <div className="grid gap-2">
@@ -842,13 +885,7 @@ export function ProductForm({
             ) : (
               <div>
                 <AddToCartButton
-                  lines={[
-                    {
-                      merchandiseId: selectedVariant.id!,
-                      quantity: 1,
-                      attributes,
-                    },
-                  ]}
+                  lines={lines}
                   variant="primary"
                   data-test="add-to-cart"
                   quantity={1}
@@ -991,6 +1028,65 @@ function ProductDetailDisclosure({
   );
 }
 
+function BeltOptionModal({
+  closeModalHandle,
+  belts,
+  selectBeltHandle,
+}: {
+  closeModalHandle: (e: React.MouseEvent) => void;
+  belts: SerializedIdBeltOption[];
+  selectBeltHandle: (e: ChangeEvent<HTMLInputElement>) => void;
+}) {
+  return ReactDOM.createPortal(
+    <div className="fixed inset-0 z-50 flex items-center justify-center overflow-hidden">
+      {/* 背景 */}
+      <div className="fixed inset-0 transition-opacity">
+        <div className="absolute inset-0 bg-gray-500 opacity-75"></div>
+      </div>
+
+      <div className="text-left transition-all transform bg-white rounded-lg shadow-xl sm:max-w-2xl sm:w-full w-[calc(100%-0.625rem)] sm:h-auto max-h-[80vh] ">
+        <p className="fixed top-0 w-full p-6 text-lg font-medium leading-6 text-gray-900 bg-white">
+          帯選択
+        </p>
+        <div className="bg-white px-6 py-20 max-h-[80vh] overflow-hidden overflow-y-scroll">
+          <div className="">
+            <div className="grid sm:grid-cols-[repeat(auto-fit,minmax(160px,1fr))] grid-cols-[repeat(auto-fit,minmax(120px,1fr))] gap-5 overflow-scroll">
+              {belts.map((belt) => (
+                <>
+                  <label
+                    className={clsx(
+                      belt.availableForSale
+                        ? 'cursor-pointer'
+                        : 'cursor-not-allowed opacity-65',
+                    )}
+                    key={belt.id}
+                  >
+                    <img src={belt.src} alt={belt.title} />
+                    <div className="flex items-center my-2 ml-1 text-sm gap-x-1">
+                      <input
+                        type="checkbox"
+                        value={belt.id}
+                        onChange={selectBeltHandle}
+                        className="block text-black bg-white border rounded group size-4 !ring-black "
+                        disabled={!belt.availableForSale}
+                      />
+                      {belt.title}
+                    </div>
+                  </label>
+                </>
+              ))}
+            </div>
+          </div>
+        </div>
+        <div className="fixed bottom-0 w-full px-4 py-3 bg-gray-50 sm:px-6 sm:flex sm:flex-row-reverse">
+          <Button onClick={closeModalHandle}>決定</Button>
+        </div>
+      </div>
+    </div>,
+    document.querySelector('#modal') as Element,
+  );
+}
+
 const PRODUCT_VARIANT_FRAGMENT = `#graphql
   fragment ProductVariantFragment on ProductVariant {
     id
@@ -1122,7 +1218,7 @@ const RECOMMENDED_PRODUCTS_QUERY = `#graphql
     recommended: productRecommendations(productId: $productId) {
       ...ProductCard
     }
-    additional: products(first: $count, sortKey: BEST_SELLING) {
+    additional: products(first: $count, sortKey: BEST_SELLING, query: "-tag:帯 AND -tag:オプション") {
       nodes {
         ...ProductCard
       }
@@ -1130,6 +1226,33 @@ const RECOMMENDED_PRODUCTS_QUERY = `#graphql
   }
   ${PRODUCT_CARD_FRAGMENT}
 ` as const;
+
+type BeltOption = {
+  id: string;
+  title: string;
+  src: string | undefined;
+  hashId: string;
+  availableForSale: boolean;
+};
+type SerializedIdBeltOption = SerializeFrom<BeltOption>;
+
+async function getBeltOptions(storefront: Storefront) {
+  const result = await storefront.query(BELT_OPTIONS_QUERY);
+
+  invariant(result, 'No data returned from Shopify API');
+
+  const belts: BeltOption[] = result.products.nodes.map((product) => {
+    return {
+      id: product.variants.nodes[0].id,
+      title: product.title,
+      src: product.variants.nodes[0].image?.src,
+      hashId: new Hashids(product.title).encode(1, 2, 3),
+      availableForSale: product.variants.nodes[0].availableForSale,
+    };
+  });
+
+  return belts;
+}
 
 async function getRecommendedProducts(
   storefront: Storefront,
@@ -1156,6 +1279,26 @@ async function getRecommendedProducts(
 
   return {nodes: mergedProducts};
 }
+
+const BELT_OPTIONS_QUERY = `#graphql
+query getProducts {
+  products(first: 100, query: "(tag:帯) AND (tag:オプション)") {
+    nodes {
+      id
+      title
+      variants(first: 1) {
+        nodes {
+          id
+          image {
+            src
+          }
+          availableForSale
+        }
+      }
+    }
+  }
+}
+` as const;
 
 const DELIVERY_TIME_OPTIONS_QUERY = `#graphql
 query DeliverTimeOptions {
