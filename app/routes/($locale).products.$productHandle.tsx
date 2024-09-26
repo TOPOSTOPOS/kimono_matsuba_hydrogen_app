@@ -383,6 +383,7 @@ export function ProductForm({
     const state = {...optionValues, [name]: value};
 
     if (name == 'startDate') {
+      state.startDate = new Date(value);
       state.deliveryDate = subDays(value, 4);
     }
 
