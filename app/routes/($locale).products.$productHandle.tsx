@@ -1058,7 +1058,6 @@ function BeltOptionModal({
   selectedBelts: string[];
   selectBeltHandle: (e: ChangeEvent<HTMLInputElement>) => void;
 }) {
-  console.log('belt', selectedBelts);
   return ReactDOM.createPortal(
     <div className="fixed inset-0 z-50 flex items-center justify-center overflow-hidden">
       {/* 背景 */}
