@@ -25,6 +25,7 @@ import {ja} from 'date-fns/locale/ja';
 import type {
   AttributeInput,
   CartLineInput,
+  SelectedOption,
 } from '@shopify/hydrogen/storefront-api-types';
 import Hashids from 'hashids';
 
@@ -153,6 +154,22 @@ async function loadCriticalData({
   // Investigate if we can avoid the redirect for product pages with no search params for first variant
   const firstVariant = product.variants.nodes[0];
   const selectedVariant = product.selectedVariant ?? firstVariant;
+
+  // MEMO: variantが設定されていない場合、URLパラメーターに追加せずにデフォルトのvariantを選択済みにする
+  const firstVariantIsDefault = Boolean(
+    firstVariant.selectedOptions.find(
+      (option: SelectedOption) =>
+        option.name === 'Title' && option.value === 'Default Title',
+    ),
+  );
+
+  if (firstVariantIsDefault) {
+    product.selectedVariant = firstVariant;
+  } else {
+    if (!product.selectedVariant) {
+      throw redirectToFirstVariant({product, request});
+    }
+  }
 
   const seo = seoPayload.product({
     product,
@@ -366,6 +383,7 @@ export function ProductForm({
     const state = {...optionValues, [name]: value};
 
     if (name == 'startDate') {
+      state.startDate = new Date(value);
       state.deliveryDate = subDays(value, 4);
     }
 
@@ -522,6 +540,7 @@ export function ProductForm({
                     <BeltOptionModal
                       closeModalHandle={closeModal}
                       belts={belts}
+                      selectedBelts={selectedBelts}
                       selectBeltHandle={handleBeltChange}
                     />
                   )}
@@ -1031,10 +1050,12 @@ function ProductDetailDisclosure({
 function BeltOptionModal({
   closeModalHandle,
   belts,
+  selectedBelts,
   selectBeltHandle,
 }: {
   closeModalHandle: (e: React.MouseEvent) => void;
   belts: SerializedIdBeltOption[];
+  selectedBelts: string[];
   selectBeltHandle: (e: ChangeEvent<HTMLInputElement>) => void;
 }) {
   return ReactDOM.createPortal(
@@ -1052,28 +1073,27 @@ function BeltOptionModal({
           <div className="">
             <div className="grid sm:grid-cols-[repeat(auto-fit,minmax(160px,1fr))] grid-cols-[repeat(auto-fit,minmax(120px,1fr))] gap-5 overflow-scroll">
               {belts.map((belt) => (
-                <>
-                  <label
-                    className={clsx(
-                      belt.availableForSale
-                        ? 'cursor-pointer'
-                        : 'cursor-not-allowed opacity-65',
-                    )}
-                    key={belt.id}
-                  >
-                    <img src={belt.src} alt={belt.title} />
-                    <div className="flex items-center my-2 ml-1 text-sm gap-x-1">
-                      <input
-                        type="checkbox"
-                        value={belt.id}
-                        onChange={selectBeltHandle}
-                        className="block text-black bg-white border rounded group size-4 !ring-black "
-                        disabled={!belt.availableForSale}
-                      />
-                      {belt.title}
-                    </div>
-                  </label>
-                </>
+                <label
+                  className={clsx(
+                    belt.availableForSale
+                      ? 'cursor-pointer'
+                      : 'cursor-not-allowed opacity-65',
+                  )}
+                  key={belt.id}
+                >
+                  <img src={belt.src} alt={belt.title} />
+                  <div className="flex items-center my-2 ml-1 text-sm gap-x-1">
+                    <input
+                      type="checkbox"
+                      value={belt.id}
+                      onChange={selectBeltHandle}
+                      className="block text-black bg-white border rounded group size-4 !ring-black "
+                      disabled={!belt.availableForSale}
+                      checked={selectedBelts.includes(belt.id)}
+                    />
+                    {belt.title}
+                  </div>
+                </label>
               ))}
             </div>
           </div>
