@@ -507,8 +507,6 @@ export function ProductForm({
     setIsModalOpen(false);
   };
 
-  console.log(optionValues);
-
   return (
     <form className="grid gap-10" encType="multipart/form-data">
       <div className="grid gap-5">
