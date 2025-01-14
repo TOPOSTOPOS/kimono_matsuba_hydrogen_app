@@ -357,10 +357,10 @@ export function ProductForm({
   } = useLoaderData<typeof loader>();
 
   const currentDate = new Date();
-  currentDate.setDate(currentDate.getDate() + 7);
+  currentDate.setDate(currentDate.getDate() + 13);
   const minDate = currentDate;
   const minDeliveryDate = new Date();
-  minDeliveryDate.setDate(minDeliveryDate.getDate() + 3);
+  minDeliveryDate.setDate(minDate.getDate() - 4);
   const isEnableTabiOptionMetafield = product.metafields.find(
     (metafield) => metafield?.key === 'is_enable_tabi_option',
   );
@@ -506,6 +506,8 @@ export function ProductForm({
     e.preventDefault();
     setIsModalOpen(false);
   };
+
+  console.log(optionValues);
 
   return (
     <form className="grid gap-10" encType="multipart/form-data">
