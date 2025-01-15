@@ -214,7 +214,7 @@ function CartCheckoutActions({
             disabled={true}
             className="inline-block px-6 py-3 font-medium text-center text-white rounded bg-slate-300"
           >
-            チェックアウトに進む
+            決済へ進む
           </Button>
           <p className="mt-2 text-sm text-center text-red-500">
             ※ カート内の商品とオプションの組み合わせが正しくありません。
@@ -225,7 +225,7 @@ function CartCheckoutActions({
       ) : (
         <a href={checkoutUrl} target="_self">
           <Button as="span" width="full">
-            チェックアウトに進む
+            決済へ進む
           </Button>
         </a>
       )}

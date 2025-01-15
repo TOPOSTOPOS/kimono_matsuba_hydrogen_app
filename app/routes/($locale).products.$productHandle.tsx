@@ -694,7 +694,7 @@ export function ProductForm({
                 <div>
                   <Listbox>
                     <Listbox.Label className="block mb-1 text-sm font-medium text-gray-900">
-                      ご利用開始日
+                      ご利用日
                     </Listbox.Label>
                     <DatePicker
                       toggleCalendarOnIconClick
