@@ -2,6 +2,7 @@ import {useEffect, useRef, useState} from 'react';
 import {Splide, SplideSlide} from '@splidejs/react-splide';
 
 import type {CollectionContentFragment} from 'storefrontapi.generated';
+import useIsPhone from '~/hooks/usePhone';
 
 import {Hero} from './Hero';
 
@@ -17,20 +18,22 @@ type HeroSliderProps = {
   loading?: HTMLImageElement['loading'];
 };
 
-const heroSplideOptions = {
-  type: 'loop' as const,
-  perPage: 1,
-  perMove: 1,
-  focus: 'center' as const,
-  padding: {left: '30%', right: '30%'},
-  gap: '1rem',
-  arrows: true,
-  pagination: false,
-  drag: true,
-  autoplay: false,
-};
-
 export function HeroSlider({heros, height, loading, top}: HeroSliderProps) {
+  const isMobile = useIsPhone();
+  const heroSplideOptions = {
+    type: 'loop' as const,
+    perPage: 1,
+    perMove: 1,
+    focus: 'center' as const,
+    padding: isMobile
+      ? {left: '10%', right: '10%'}
+      : {left: '30%', right: '30%'},
+    gap: '1rem',
+    arrows: false,
+    pagination: false,
+    drag: true,
+    autoplay: true,
+  };
   // SSR は false、クライアント初回も false → useEffect で true にする。
   // HMR で他ファイルが変わった場合は isClientReady が true のまま残るため、
   // useState(isClientReady) により即座に true で初期化され、フリッカーなし。

@@ -145,6 +145,9 @@ function MenuMobileNav({
           </Link>
         </span>
       ))}
+      <Button to="https://hon-matsuba.co.jp/" variant="primary" target="_blank">
+        来店予約
+      </Button>
     </nav>
   );
 }
@@ -299,7 +302,7 @@ function DesktopHeader({
           </div>
         </div>
       </header>
-      <nav className="justify-end items-center flex gap-8 w-full lg:max-w-[980px] mx-auto text-sm py-5">
+      <nav className="justify-end items-center hidden gap-8 w-full lg:max-w-[980px] mx-auto text-sm py-5 sm:flex ">
         {/* Top level menu items */}
         {(menu?.items || []).map((item) => (
           <Link
