@@ -5,6 +5,8 @@ import type {
   Media,
   Video as MediaVideo,
 } from '@shopify/hydrogen/storefront-api-types';
+import {Splide, SplideSlide} from '@splidejs/react-splide';
+import '@splidejs/splide/css';
 
 import type {CollectionContentFragment} from 'storefrontapi.generated';
 import {Heading, Text} from '~/components/Text';
@@ -16,8 +18,22 @@ type HeroProps = CollectionContentFragment & {
   loading?: HTMLImageElement['loading'];
 };
 
+const heroSplideOptions = {
+  type: 'loop' as const,
+  perPage: 1,
+  perMove: 1,
+  focus: 'center' as const,
+  padding: {left: '8%', right: '8%'},
+  gap: '1rem',
+  arrows: true,
+  pagination: true,
+  drag: true,
+  autoplay: false,
+};
+
 /**
- * Hero component that renders metafields attached to collection resources
+ * Hero component that renders metafields attached to collection resources.
+ * Uses Splide slider with overflow peek on both ends.
  **/
 export function Hero({
   byline,
@@ -30,42 +46,46 @@ export function Hero({
   spreadSecondary,
   top,
 }: HeroProps) {
+  const slides = [spread?.reference, spreadSecondary?.reference].filter(
+    Boolean,
+  ) as Media[];
+
   return (
     <Link to={`/collections/${handle}`} prefetch="viewport">
       <section
         className={clsx(
-          'relative justify-end flex flex-col w-full',
+          'relative justify-end flex flex-col w-full overflow-hidden',
           top && '-mt-nav',
           height === 'full'
             ? 'h-screen'
             : 'aspect-[4/5] sm:aspect-square md:aspect-[5/4] lg:aspect-[3/2] xl:aspect-[2/1]',
         )}
       >
-        <div className="absolute inset-0 grid flex-grow grid-flow-col pointer-events-none auto-cols-fr -z-10 content-stretch overflow-clip">
-          {spread?.reference && (
-            <div>
-              <SpreadMedia
-                sizes={
-                  spreadSecondary?.reference
-                    ? '(min-width: 48em) 50vw, 100vw'
-                    : '100vw'
-                }
-                data={spread.reference as Media}
-                loading={loading}
-              />
-            </div>
-          )}
-          {spreadSecondary?.reference && (
-            <div className="hidden md:block">
-              <SpreadMedia
-                sizes="50vw"
-                data={spreadSecondary.reference as Media}
-                loading={loading}
-              />
-            </div>
-          )}
+        <div className="">
+          {slides.length > 0 ? (
+            <Splide
+              options={heroSplideOptions}
+              className="hero-splide !absolute !inset-0"
+            >
+              {slides.map((media, index) => (
+                <SplideSlide key={(media as {id?: string}).id ?? index}>
+                  <div className="w-full h-full">
+                    <SpreadMedia
+                      sizes={
+                        slides.length > 1
+                          ? '(min-width: 48em) 50vw, 100vw'
+                          : '100vw'
+                      }
+                      data={media}
+                      loading={loading}
+                    />
+                  </div>
+                </SplideSlide>
+              ))}
+            </Splide>
+          ) : null}
         </div>
-        <div className="flex flex-col items-baseline justify-between gap-4 px-6 py-8 sm:px-8 md:px-12 bg-gradient-to-t dark:from-contrast/60 dark:text-primary from-primary/60 text-contrast">
+        <div className="flex flex-col gap-4 justify-between items-baseline px-6 py-8 bg-gradient-to-t sm:px-8 md:px-12 dark:from-contrast/60 dark:text-primary from-primary/60 text-contrast">
           {heading?.value && (
             <Heading format as="h2" size="display" className="max-w-md">
               {heading.value}

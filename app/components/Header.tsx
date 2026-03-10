@@ -22,6 +22,7 @@ import {useCartFetchers} from '~/hooks/useCartFetchers';
 import type {RootLoader} from '~/root';
 
 import {Icons} from './elements/Icons';
+import {Button} from './Button';
 
 export function Header({title, menu}: {title: string; menu?: EnhancedMenu}) {
   const isHome = useIsHomePath();
@@ -111,7 +112,7 @@ function MenuMobileNav({
   onClose: () => void;
 }) {
   return (
-    <nav className="grid gap-4 p-6 sm:gap-6 sm:px-12 sm:py-8">
+    <nav className="grid gap-4 px-6 py-4 sm:gap-6 sm:px-8 sm:py-4">
       {/* Top level menu items */}
       {(menu?.items || []).map((item) => (
         <span key={item.id} className="block">
@@ -123,8 +124,23 @@ function MenuMobileNav({
               isActive ? 'pb-1 border-b -mb-px' : 'pb-1'
             }
           >
-            <Text as="span" size="copy">
-              {item.title}
+            <Text
+              as="span"
+              size="copy"
+              className="flex justify-between items-center text-sm border-b border-[#E0E0E0] pb-4"
+            >
+              <span className="text-sm">{item.title}</span>
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                viewBox="0 0 14 32"
+                width="24"
+                height="24"
+                role="img"
+                aria-hidden="true"
+                className="w-4 h-4"
+              >
+                <path d="M1.867 28.533a1.867 1.867 0 0 1-1.32-3.187l9.346-9.347L.547 6.652a1.867 1.867 0 0 1 2.64-2.64l10.667 10.667a1.867 1.867 0 0 1 0 2.64L3.187 27.986a1.86 1.86 0 0 1-1.32.547z"></path>
+              </svg>
             </Text>
           </Link>
         </span>
@@ -153,25 +169,25 @@ function MobileHeader({
       role="banner"
       className={`${
         isHome
-          ? 'bg-primary/80 dark:bg-contrast/60 text-contrast dark:text-primary shadow-darkHeader'
-          : 'bg-contrast/80 text-primary'
+          ? 'text-black bg-white dark:text-primary shadow-darkHeader'
+          : 'text-primary'
       } flex lg:hidden items-center sticky backdrop-blur-lg z-40 top-0 justify-between w-full leading-none gap-4 px-4 md:px-8`}
     >
-      <div className="flex items-center justify-start w-full gap-2">
+      <div className="flex gap-2 justify-start items-center w-full">
         <button
           onClick={openMenu}
-          className="relative flex items-center justify-center w-8 h-8"
+          className="flex relative justify-center items-center w-8 h-8"
         >
           <IconMenu />
         </button>
         <Form
           method="get"
           action={params.locale ? `/${params.locale}/search` : '/search'}
-          className="items-center gap-2 sm:flex"
+          className="gap-2 items-center sm:flex"
         >
           <button
             type="submit"
-            className="relative flex items-center justify-center w-8 h-8"
+            className="flex relative justify-center items-center w-8 h-8"
           >
             <IconSearch />
           </button>
@@ -204,8 +220,8 @@ function MobileHeader({
         </Heading>
       </Link>
 
-      <div className="flex items-center justify-end w-full gap-2">
-        <AccountLink className="relative flex items-center justify-center w-8 h-8" />
+      <div className="flex gap-2 justify-end items-center w-full">
+        <AccountLink className="flex relative justify-center items-center w-8 h-8" />
         <CartCount isHome={isHome} openCart={openCart} />
       </div>
     </header>
@@ -230,34 +246,34 @@ function DesktopHeader({
       role="banner"
       className={`${
         isHome
-          ? 'bg-primary/80 dark:bg-contrast/60 text-contrast dark:text-primary shadow-darkHeader'
-          : 'bg-contrast/80 text-primary'
+          ? 'text-black bg-white dark:text-primary shadow-darkHeader'
+          : 'text-primary'
       } ${
         !isHome && y > 50 && ' shadow-lightHeader'
-      } hidden lg:flex lg:flex-col items-center sticky transition duration-300 backdrop-blur-lg z-40 top-0 justify-between w-full leading-none gap-4 px-12 py-8`}
+      } hidden lg:flex lg:flex-col items-end sticky transition duration-300 backdrop-blur-lg z-40 top-0 justify-between w-full leading-none gap-4 py-4 `}
     >
-      <div className="flex justify-between w-full">
+      <div className="flex justify-between items-center w-full max-w-[980px] mx-auto">
         <h1
           className={`${
-            isHome ? 'text-white' : 'text-black'
-          } text-[.75rem] sml:hidden`}
+            isHome ? 'text-black' : 'text-black'
+          } text-[.75rem] sr-only`}
         >
           着物レンタルモールhataori(ハタオリ)
         </h1>
-        <div className="absolute -translate-x-1/2 left-1/2">
+        <div className="">
           <Link className="font-bold" to="/" prefetch="intent">
             <Icons.Logo
-              className="w-[150px] h-6 flex-1 sml:h-3 sml:w-auto sml:flex-none"
-              fill={isHome ? 'white' : 'black'}
+              className="w-[160px] h-8 flex-1 sml:h-5 sml:w-auto sml:flex-none"
+              fill={isHome ? 'black' : 'black'}
             />
           </Link>
         </div>
 
-        <div className="flex items-center gap-1">
+        <div className="flex gap-1 items-center">
           <Form
             method="get"
             action={params.locale ? `/${params.locale}/search` : '/search'}
-            className="flex items-center gap-2"
+            className="flex gap-2 items-center"
           >
             <Input
               className={
@@ -272,16 +288,16 @@ function DesktopHeader({
             />
             <button
               type="submit"
-              className="relative flex items-center justify-center w-8 h-8 focus:ring-primary/5"
+              className="flex relative justify-center items-center w-8 h-8 focus:ring-primary/5"
             >
               <IconSearch />
             </button>
           </Form>
-          <AccountLink className="relative flex items-center justify-center w-8 h-8 focus:ring-primary/5" />
+          <AccountLink className="flex relative justify-center items-center w-8 h-8 focus:ring-primary/5" />
           <CartCount isHome={isHome} openCart={openCart} />
         </div>
       </div>
-      <nav className="flex gap-8">
+      <nav className="justify-end items-center flex gap-8 w-full lg:max-w-[980px] mx-auto text-sm">
         {/* Top level menu items */}
         {(menu?.items || []).map((item) => (
           <Link
@@ -296,6 +312,13 @@ function DesktopHeader({
             {item.title}
           </Link>
         ))}
+        <Button
+          to="https://hon-matsuba.co.jp/"
+          variant="primary"
+          target="_blank"
+        >
+          来店予約
+        </Button>
       </nav>
     </header>
   );
@@ -373,14 +396,14 @@ function Badge({
   return isHydrated ? (
     <button
       onClick={openCart}
-      className="relative flex items-center justify-center w-8 h-8 focus:ring-primary/5"
+      className="flex relative justify-center items-center w-8 h-8 focus:ring-primary/5"
     >
       {BadgeCounter}
     </button>
   ) : (
     <Link
       to="/cart"
-      className="relative flex items-center justify-center w-8 h-8 focus:ring-primary/5"
+      className="flex relative justify-center items-center w-8 h-8 focus:ring-primary/5"
     >
       {BadgeCounter}
     </Link>

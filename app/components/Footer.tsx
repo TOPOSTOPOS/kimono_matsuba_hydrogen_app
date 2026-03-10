@@ -12,6 +12,8 @@ import {
   useIsHomePath,
 } from '~/lib/utils';
 
+import {Icons} from './elements/Icons';
+
 export function Footer({menu}: {menu?: EnhancedMenu}) {
   const isHome = useIsHomePath();
   const itemsCount = menu
@@ -25,8 +27,7 @@ export function Footer({menu}: {menu?: EnhancedMenu}) {
       divider={isHome ? 'none' : 'top'}
       as="footer"
       role="contentinfo"
-      className={`grid min-h-[25rem] items-start grid-flow-row w-full gap-6 py-8 px-6 md:px-8 lg:px-12 md:gap-8 lg:gap-12 grid-cols-1 md:grid-cols-2 lg:grid-cols-${itemsCount}
-        bg-white dark:bg-contrast dark:text-primary text-contrast overflow-hidden`}
+      className={`grid overflow-hidden grid-cols-1 grid-flow-row gap-6 items-start px-6 py-8 w-full bg-white min-h-[25rem] md:px-8 lg:px-12 md:gap-8 lg:gap-12 md:grid-cols-2 lg:grid-cols-${itemsCount} dark:bg-contrast dark:text-primary text-contrast`}
     >
       <FooterMenu menu={menu} />
       <div className="hidden">
@@ -36,11 +37,11 @@ export function Footer({menu}: {menu?: EnhancedMenu}) {
       <FooterSns />
 
       <div
-        className={`w-full text-primary flex justify-between self-end pt-8 opacity-50 md:col-span-4 lg:col-span-${itemsCount}`}
+        className={`flex justify-between self-end pt-8 w-full text-primary md:col-span-4 lg:col-span-${itemsCount}`}
       >
         {/* <p>aaa</p> */}
-        <p className="text-primary">
-          &copy; {new Date().getFullYear()} TRENT Inc.
+        <p className="">
+          <Icons.Logo className="w-[148px] h-auto" fill="black" />
         </p>
       </div>
     </Section>
@@ -196,11 +197,11 @@ function FooterSns() {
     },
   ];
   return (
-    <section className="grid w-full gap-4 text-primary">
-      <h3 className="font-bold whitespace-pre-wrap cursor-default max-w-prose text-lead">
+    <section className="grid gap-4 w-full text-primary">
+      <h3 className="max-w-prose font-bold whitespace-pre-wrap cursor-default text-lead">
         SNS
       </h3>
-      <div className="flex gap-2 overflow-hidden transition-all duration-300 max-h-0 md:max-h-fit">
+      <div className="flex overflow-hidden gap-2 max-h-0 transition-all duration-300 md:max-h-fit">
         {snsMenu.length &&
           snsMenu.map((snsItem) => {
             return <div key={snsItem.id}>{snsItem.icon}</div>;

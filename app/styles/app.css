@@ -132,7 +132,7 @@ shop-pay-button {
   }
 
   .swimlane {
-    @apply grid justify-start w-full grid-flow-col gap-4 px-6 pb-4 overflow-x-scroll snap-x snap-mandatory scroll-px-6;
+    @apply grid overflow-x-scroll grid-flow-col gap-4 justify-start px-6 pb-4 w-full snap-x snap-mandatory scroll-px-6;
   }
 }
 
@@ -150,7 +150,7 @@ shop-pay-button {
   }
 
   .absolute-center {
-    @apply absolute -translate-x-1/2 -translate-y-1/2 top-1/2 left-1/2;
+    @apply absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2;
   }
 
   .strike {
@@ -170,10 +170,10 @@ shop-pay-button {
   }
 
   .card-image {
-    @apply relative flex items-center justify-center rounded overflow-clip;
+    @apply flex relative justify-center items-center overflow-clip rounded;
     &::before {
       content: ' ';
-      @apply absolute top-0 left-0 z-10 block w-full h-full rounded shadow-border;
+      @apply block absolute top-0 left-0 z-10 w-full h-full rounded shadow-border;
     }
     img {
       @apply aspect-[inherit] w-full object-cover;
@@ -268,5 +268,23 @@ shop-pay-button {
 }
 
 .react-datepicker__input-container input {
-  @apply w-full relative w-full !py-[0.52rem] !px-3 text-left bg-white border border-gray-300 rounded-lg shadow-md cursor-default focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary sm:text-sm !text-[#141414];
+  @apply w-full relative !py-[0.52rem] !px-3 text-left bg-white border border-gray-300 rounded-lg shadow-md cursor-default focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary sm:text-sm !text-[#141414];
+}
+
+/* Hero Splide: 両端はみ出るスライダー・高さ100% */
+.hero-splide.splide {
+  height: 100%;
+}
+.hero-splide .splide__track {
+  height: 100%;
+}
+.hero-splide .splide__list {
+  height: 100%;
+  align-items: stretch;
+}
+.hero-splide .splide__slide {
+  height: 100%;
+}
+.hero-splide .splide__slide__container {
+  height: 100% !important;
 }

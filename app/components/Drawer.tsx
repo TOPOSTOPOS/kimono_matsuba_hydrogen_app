@@ -46,7 +46,7 @@ export function Drawer({
         </Transition.Child>
 
         <div className="fixed inset-0">
-          <div className="absolute inset-0 overflow-hidden">
+          <div className="overflow-hidden absolute inset-0">
             <div
               className={`fixed inset-y-0 flex max-w-full ${
                 openFrom === 'right' ? 'right-0' : ''
@@ -61,7 +61,7 @@ export function Drawer({
                 leaveFrom="translate-x-0"
                 leaveTo={offScreen[openFrom]}
               >
-                <Dialog.Panel className="w-screen max-w-lg text-left align-middle transition-all transform shadow-xl h-screen-dynamic bg-contrast">
+                <Dialog.Panel className="w-screen max-w-lg text-left align-middle shadow-xl transition-all transform h-screen-dynamic bg-contrast">
                   <header
                     className={`sticky top-0 flex items-center px-6 h-nav sm:px-8 md:px-12 ${
                       heading ? 'justify-between' : 'justify-end'
@@ -70,7 +70,7 @@ export function Drawer({
                     {heading !== null && (
                       <Dialog.Title>
                         <Heading as="span" size="lead" id="cart-contents">
-                          {heading}
+                          <span className="sr-only">{heading}</span>
                         </Heading>
                       </Dialog.Title>
                     )}

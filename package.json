@@ -28,6 +28,8 @@
     "@shopify/cli-hydrogen": "0.0.0-next-83fb14b-20240614172038",
     "@shopify/hydrogen": "0.0.0-next-83fb14b-20240614172038",
     "@shopify/remix-oxygen": "0.0.0-next-83fb14b-20240614172038",
+    "@splidejs/react-splide": "^0.7.12",
+    "@splidejs/splide": "^4.1.4",
     "@types/react-datepicker": "^7.0.0",
     "clsx": "^1.2.1",
     "cross-env": "^7.0.3",
