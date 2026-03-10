@@ -1,3 +1,5 @@
+@import '@splidejs/splide/css';
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -287,4 +289,28 @@ shop-pay-button {
 }
 .hero-splide .splide__slide__container {
   height: 100% !important;
+}
+
+.page-nation-wrapper {
+  @apply flex relative gap-2 justify-center;
+}
+
+.bullet {
+  @apply flex size-[5px] items-center justify-center rounded-full bg-[#9e9e9e] relative  mt-[1px];
+}
+
+.bullet:after {
+  @apply content-[''] absolute -right-[8px] h-[1px] w-[8px] bg-[#9e9e9e];
+}
+
+.page-nation-wrapper.active > .bullet {
+  @apply size-2 border border-[#232323] bg-white mt-0;
+}
+
+.page-nation-wrapper.active .bullet:after {
+  @apply -right-[13px] top-1/2 -translate-x-1/2 h-[1px] w-[9px];
+}
+
+.page-nation-wrapper:last-child .bullet:after {
+  @apply last:content-none;
 }

@@ -7,13 +7,13 @@ import {Suspense} from 'react';
 import {Await, useLoaderData} from '@remix-run/react';
 import {getSeoMeta} from '@shopify/hydrogen';
 
-import {Hero} from '~/components/Hero';
 import {FeaturedCollections} from '~/components/FeaturedCollections';
 import {ProductSwimlane} from '~/components/ProductSwimlane';
 import {MEDIA_FRAGMENT, PRODUCT_CARD_FRAGMENT} from '~/data/fragments';
 import {getHeroPlaceholder} from '~/lib/placeholders';
 import {seoPayload} from '~/lib/seo.server';
 import {routeHeaders} from '~/data/cache';
+import {HeroSlider} from '~/components/HeroSlider';
 
 export const headers = routeHeaders;
 
@@ -85,21 +85,6 @@ function loadDeferredData({context}: LoaderFunctionArgs) {
       return null;
     });
 
-  const secondaryHero = context.storefront
-    .query(COLLECTION_HERO_QUERY, {
-      variables: {
-        handle: 'furisode',
-        country,
-        language,
-      },
-    })
-    .catch((error) => {
-      // Log query errors, but don't throw them so the page can still render
-      // eslint-disable-next-line no-console
-      console.error(error);
-      return null;
-    });
-
   const featuredCollections = context.storefront
     .query(FEATURED_COLLECTIONS_QUERY, {
       variables: {
@@ -114,10 +99,9 @@ function loadDeferredData({context}: LoaderFunctionArgs) {
       return null;
     });
 
-  const tertiaryHero = context.storefront
-    .query(COLLECTION_HERO_QUERY, {
+  const heros = context.storefront
+    .query(HOMEPAGE_HEROS_QUERY, {
       variables: {
-        handle: 'yukata',
         country,
         language,
       },
@@ -130,10 +114,9 @@ function loadDeferredData({context}: LoaderFunctionArgs) {
     });
 
   return {
+    heros,
     featuredProducts,
-    secondaryHero,
     featuredCollections,
-    tertiaryHero,
   };
 }
 
@@ -142,21 +125,32 @@ export const meta = ({matches}: MetaArgs<typeof loader>) => {
 };
 
 export default function Homepage() {
-  const {
-    primaryHero,
-    secondaryHero,
-    tertiaryHero,
-    featuredCollections,
-    featuredProducts,
-  } = useLoaderData<typeof loader>();
+  const {heros, featuredCollections, featuredProducts} =
+    useLoaderData<typeof loader>();
 
   // TODO: skeletons vs placeholders
   const skeletons = getHeroPlaceholder([{}, {}, {}]);
 
   return (
     <>
-      {primaryHero && (
-        <Hero {...primaryHero} height="full" top loading="eager" />
+      {heros && (
+        <Suspense fallback={<div>Loading...</div>}>
+          <Await resolve={heros}>
+            {(response) => {
+              const heroNodes = (response?.collections?.nodes ?? []).filter(
+                (collection) => Boolean(collection?.spread?.reference),
+              );
+              return (
+                <HeroSlider
+                  heros={heroNodes}
+                  height="full"
+                  top
+                  loading="eager"
+                />
+              );
+            }}
+          </Await>
+        </Suspense>
       )}
 
       {featuredProducts && (
@@ -182,19 +176,6 @@ export default function Homepage() {
         </Suspense>
       )}
 
-      {secondaryHero && (
-        <Suspense fallback={<Hero {...skeletons[1]} />}>
-          <Await resolve={secondaryHero}>
-            {(response) => {
-              if (!response || !response?.hero) {
-                return <></>;
-              }
-              return <Hero {...response.hero} />;
-            }}
-          </Await>
-        </Suspense>
-      )}
-
       {featuredCollections && (
         <Suspense>
           <Await resolve={featuredCollections}>
@@ -212,19 +193,6 @@ export default function Homepage() {
                   title="すべてのカテゴリ"
                 />
               );
-            }}
-          </Await>
-        </Suspense>
-      )}
-
-      {tertiaryHero && (
-        <Suspense fallback={<Hero {...skeletons[2]} />}>
-          <Await resolve={tertiaryHero}>
-            {(response) => {
-              if (!response || !response?.hero) {
-                return <></>;
-              }
-              return <Hero {...response.hero} />;
             }}
           </Await>
         </Suspense>
@@ -276,11 +244,13 @@ const HOMEPAGE_SEO_QUERY = `#graphql
   ${COLLECTION_CONTENT_FRAGMENT}
 ` as const;
 
-const COLLECTION_HERO_QUERY = `#graphql
-  query heroCollectionContent($handle: String, $country: CountryCode, $language: LanguageCode)
+const HOMEPAGE_HEROS_QUERY = `#graphql
+  query homepageHeros($country: CountryCode, $language: LanguageCode)
   @inContext(country: $country, language: $language) {
-    hero: collection(handle: $handle) {
-      ...CollectionContent
+    collections(first: 8, sortKey: UPDATED_AT) {
+      nodes {
+        ...CollectionContent
+      }
     }
   }
   ${COLLECTION_CONTENT_FRAGMENT}

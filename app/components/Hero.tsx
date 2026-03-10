@@ -5,8 +5,6 @@ import type {
   Media,
   Video as MediaVideo,
 } from '@shopify/hydrogen/storefront-api-types';
-import {Splide, SplideSlide} from '@splidejs/react-splide';
-import '@splidejs/splide/css';
 
 import type {CollectionContentFragment} from 'storefrontapi.generated';
 import {Heading, Text} from '~/components/Text';
@@ -17,20 +15,6 @@ type HeroProps = CollectionContentFragment & {
   top?: boolean;
   loading?: HTMLImageElement['loading'];
 };
-
-const heroSplideOptions = {
-  type: 'loop' as const,
-  perPage: 1,
-  perMove: 1,
-  focus: 'center' as const,
-  padding: {left: '8%', right: '8%'},
-  gap: '1rem',
-  arrows: true,
-  pagination: true,
-  drag: true,
-  autoplay: false,
-};
-
 /**
  * Hero component that renders metafields attached to collection resources.
  * Uses Splide slider with overflow peek on both ends.
@@ -46,48 +30,31 @@ export function Hero({
   spreadSecondary,
   top,
 }: HeroProps) {
-  const slides = [spread?.reference, spreadSecondary?.reference].filter(
-    Boolean,
-  ) as Media[];
-
   return (
     <Link to={`/collections/${handle}`} prefetch="viewport">
       <section
         className={clsx(
-          'relative justify-end flex flex-col w-full overflow-hidden',
-          top && '-mt-nav',
+          'relative justify-end flex flex-col w-full overflow-hidden rounded-lg shadow-lg my-3',
           height === 'full'
-            ? 'h-screen'
+            ? 'h-auto'
             : 'aspect-[4/5] sm:aspect-square md:aspect-[5/4] lg:aspect-[3/2] xl:aspect-[2/1]',
         )}
       >
-        <div className="">
-          {slides.length > 0 ? (
-            <Splide
-              options={heroSplideOptions}
-              className="hero-splide !absolute !inset-0"
-            >
-              {slides.map((media, index) => (
-                <SplideSlide key={(media as {id?: string}).id ?? index}>
-                  <div className="w-full h-full">
-                    <SpreadMedia
-                      sizes={
-                        slides.length > 1
-                          ? '(min-width: 48em) 50vw, 100vw'
-                          : '100vw'
-                      }
-                      data={media}
-                      loading={loading}
-                    />
-                  </div>
-                </SplideSlide>
-              ))}
-            </Splide>
-          ) : null}
+        <div className="w-full h-auto">
+          <SpreadMedia
+            sizes="100vw"
+            data={spread?.reference as Media | MediaImage | MediaVideo}
+            loading={loading}
+          />
         </div>
-        <div className="flex flex-col gap-4 justify-between items-baseline px-6 py-8 bg-gradient-to-t sm:px-8 md:px-12 dark:from-contrast/60 dark:text-primary from-primary/60 text-contrast">
+        <div className="flex absolute bottom-0 left-0 flex-col gap-4 justify-between items-baseline px-4 py-6 w-full bg-gradient-to-t sm:px-6 md:px-8 dark:from-contrast/60 dark:text-primary from-primary/60 text-contrast">
           {heading?.value && (
-            <Heading format as="h2" size="display" className="max-w-md">
+            <Heading
+              format
+              as="h2"
+              size="display"
+              className="max-w-lg text-[23px]!"
+            >
               {heading.value}
             </Heading>
           )}
@@ -113,7 +80,7 @@ function SpreadMedia({data, loading, sizes}: SpreadMediaProps) {
   return (
     <MediaFile
       data={data}
-      className="block object-cover w-full h-full"
+      className="block object-cover w-full h-auto"
       mediaOptions={{
         video: {
           controls: false,

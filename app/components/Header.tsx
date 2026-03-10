@@ -242,62 +242,64 @@ function DesktopHeader({
   const params = useParams();
   const {y} = useWindowScroll();
   return (
-    <header
-      role="banner"
-      className={`${
-        isHome
-          ? 'text-black bg-white dark:text-primary shadow-darkHeader'
-          : 'text-primary'
-      } ${
-        !isHome && y > 50 && ' shadow-lightHeader'
-      } hidden lg:flex lg:flex-col items-end sticky transition duration-300 backdrop-blur-lg z-40 top-0 justify-between w-full leading-none gap-4 py-4 `}
-    >
-      <div className="flex justify-between items-center w-full max-w-[980px] mx-auto">
-        <h1
-          className={`${
-            isHome ? 'text-black' : 'text-black'
-          } text-[.75rem] sr-only`}
-        >
-          着物レンタルモールhataori(ハタオリ)
-        </h1>
-        <div className="">
-          <Link className="font-bold" to="/" prefetch="intent">
-            <Icons.Logo
-              className="w-[160px] h-8 flex-1 sml:h-5 sml:w-auto sml:flex-none"
-              fill={isHome ? 'black' : 'black'}
-            />
-          </Link>
-        </div>
-
-        <div className="flex gap-1 items-center">
-          <Form
-            method="get"
-            action={params.locale ? `/${params.locale}/search` : '/search'}
-            className="flex gap-2 items-center"
+    <>
+      <header
+        role="banner"
+        className={`${
+          isHome
+            ? 'text-black bg-white dark:text-primary shadow-darkHeader'
+            : 'text-primary'
+        } ${
+          !isHome && y > 50 && ' shadow-lightHeader'
+        } hidden lg:flex lg:flex-col items-end sticky transition duration-300 backdrop-blur-lg z-40 top-0 justify-between w-full leading-none gap-4 py-4 `}
+      >
+        <div className="flex justify-between items-center w-full max-w-[980px] mx-auto">
+          <h1
+            className={`${
+              isHome ? 'text-black' : 'text-black'
+            } text-[.75rem] sr-only`}
           >
-            <Input
-              className={
-                isHome
-                  ? 'focus:border-contrast/20 dark:focus:border-primary/20'
-                  : 'focus:border-primary/20'
-              }
-              type="search"
-              variant="minisearch"
-              placeholder="検索"
-              name="q"
-            />
-            <button
-              type="submit"
-              className="flex relative justify-center items-center w-8 h-8 focus:ring-primary/5"
+            着物レンタルモールhataori(ハタオリ)
+          </h1>
+          <div className="">
+            <Link className="font-bold" to="/" prefetch="intent">
+              <Icons.Logo
+                className="w-[160px] h-8 flex-1 sml:h-5 sml:w-auto sml:flex-none"
+                fill={isHome ? 'black' : 'black'}
+              />
+            </Link>
+          </div>
+
+          <div className="flex gap-1 items-center">
+            <Form
+              method="get"
+              action={params.locale ? `/${params.locale}/search` : '/search'}
+              className="flex gap-2 items-center"
             >
-              <IconSearch />
-            </button>
-          </Form>
-          <AccountLink className="flex relative justify-center items-center w-8 h-8 focus:ring-primary/5" />
-          <CartCount isHome={isHome} openCart={openCart} />
+              <Input
+                className={
+                  isHome
+                    ? 'focus:border-contrast/20 dark:focus:border-primary/20'
+                    : 'focus:border-primary/20'
+                }
+                type="search"
+                variant="minisearch"
+                placeholder="検索"
+                name="q"
+              />
+              <button
+                type="submit"
+                className="flex relative justify-center items-center w-8 h-8 focus:ring-primary/5"
+              >
+                <IconSearch />
+              </button>
+            </Form>
+            <AccountLink className="flex relative justify-center items-center w-8 h-8 focus:ring-primary/5" />
+            <CartCount isHome={isHome} openCart={openCart} />
+          </div>
         </div>
-      </div>
-      <nav className="justify-end items-center flex gap-8 w-full lg:max-w-[980px] mx-auto text-sm">
+      </header>
+      <nav className="justify-end items-center flex gap-8 w-full lg:max-w-[980px] mx-auto text-sm py-5">
         {/* Top level menu items */}
         {(menu?.items || []).map((item) => (
           <Link
@@ -320,7 +322,7 @@ function DesktopHeader({
           来店予約
         </Button>
       </nav>
-    </header>
+    </>
   );
 }
 
