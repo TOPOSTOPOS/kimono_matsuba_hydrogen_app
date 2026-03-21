@@ -62,7 +62,7 @@ export function SortFilter({
           className={`transition-all duration-200 ${
             isOpen
               ? 'opacity-100 min-w-full md:min-w-[240px] md:w-[240px] md:pr-8 max-h-full'
-              : 'opacity-0 md:min-w-[0px] md:w-[0px] pr-0 max-h-0 md:max-h-full'
+              : 'opacity-0 md:min-w-0 md:w-0 pr-0 max-h-0 md:max-h-full'
           }`}
         >
           <FiltersDrawer filters={filters} appliedFilters={appliedFilters} />
@@ -164,7 +164,7 @@ function AppliedFilters({filters = []}: {filters: AppliedFilter[]}) {
               className="flex px-2 border rounded-full gap"
               key={`${filter.label}-${JSON.stringify(filter.filter)}`}
             >
-              <span className="flex-grow">{filter.label}</span>
+              <span className="grow">{filter.label}</span>
               <span>
                 <IconXMark />
               </span>
@@ -344,7 +344,7 @@ export default function SortMenu() {
 
       <Menu.Items
         as="nav"
-        className="absolute right-0 flex flex-col p-4 text-right rounded-sm bg-contrast"
+        className="absolute right-0 flex flex-col p-4 text-right rounded-xs bg-contrast"
       >
         {items.map((item) => (
           <Menu.Item key={item.label}>

@@ -44,6 +44,17 @@ export const PRODUCT_CARD_FRAGMENT = `#graphql
     publishedAt
     handle
     vendor
+    metafield(namespace: "custom", key: "main_collection") {
+      type
+      value
+      reference {
+        ... on Collection {
+          id
+          title
+          handle
+        }
+      }
+    }
     variants(first: 1) {
       nodes {
         id

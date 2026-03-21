@@ -176,7 +176,7 @@ function CartLines({
   const className = clsx([
     y > 0 ? 'border-t' : '',
     layout === 'page'
-      ? 'flex-grow md:translate-y-4'
+      ? 'grow md:translate-y-4'
       : 'px-6 pb-6 sm-max:pt-2 overflow-auto transition md:px-12',
   ]);
 
@@ -212,7 +212,7 @@ function CartCheckoutActions({
             as="span"
             width="full"
             disabled={true}
-            className="inline-block px-6 py-3 font-medium text-center text-white rounded bg-slate-300"
+            className="inline-block px-6 py-3 font-medium text-center text-white rounded-sm bg-slate-300"
           >
             決済へ進む
           </Button>
@@ -246,7 +246,7 @@ function CartSummary({
 }) {
   const summary = {
     drawer: 'grid gap-4 p-6 border-t md:px-12',
-    page: 'sticky top-nav grid gap-6 p-4 md:px-6 md:translate-y-4 bg-primary/5 rounded w-full',
+    page: 'sticky top-nav grid gap-6 p-4 md:px-6 md:translate-y-4 bg-primary/5 rounded-sm w-full',
   };
 
   return (
@@ -301,19 +301,19 @@ function CartLineItem({line}: {line: CartLine}) {
         display: optimisticData?.action === 'remove' ? 'none' : 'flex',
       }}
     >
-      <div className="flex-shrink">
+      <div className="shrink">
         {merchandise.image && (
           <Image
             width={110}
             height={110}
             data={merchandise.image}
-            className="object-cover object-center w-24 h-24 border rounded md:w-28 md:h-28"
+            className="object-cover object-center w-24 h-24 border rounded-sm md:w-28 md:h-28"
             alt={merchandise.title}
           />
         )}
       </div>
 
-      <div className="flex justify-between flex-grow">
+      <div className="flex justify-between grow">
         <div className="grid gap-2">
           <Heading as="h3" size="copy">
             {merchandise?.product?.handle ? (
@@ -366,7 +366,7 @@ function ItemRemoveButton({lineId}: {lineId: CartLine['id']}) {
       }}
     >
       <button
-        className="flex items-center justify-center w-10 h-10 border rounded"
+        className="flex items-center justify-center w-10 h-10 border rounded-sm"
         type="submit"
       >
         <span className="sr-only">Remove</span>
@@ -394,7 +394,7 @@ function CartLineQuantityAdjust({line}: {line: CartLine}) {
       <label htmlFor={`quantity-${lineId}`} className="sr-only">
         Quantity, {optimisticQuantity}
       </label>
-      <div className="flex items-center border rounded">
+      <div className="flex items-center border rounded-sm">
         <UpdateCartButton lines={[{id: lineId, quantity: prevQuantity}]}>
           <button
             name="decrease-quantity"

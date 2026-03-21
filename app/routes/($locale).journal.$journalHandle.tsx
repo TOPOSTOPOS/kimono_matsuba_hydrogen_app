@@ -14,6 +14,7 @@ import {routeHeaders} from '~/data/cache';
 
 import styles from '../styles/custom-font.css?url';
 
+/** Storefront の blog(handle) — 管理画面のブログ URL スラッグと一致させる */
 const BLOG_HANDLE = 'journal';
 
 export const headers = routeHeaders;
@@ -72,7 +73,7 @@ export default function Article() {
         {image && (
           <Image
             data={image}
-            className="w-full mx-auto mt-8 md:mt-16 max-w-7xl"
+            className="mx-auto mt-8 w-full max-w-7xl md:mt-16"
             sizes="90vw"
             loading="eager"
           />

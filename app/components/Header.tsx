@@ -2,6 +2,7 @@ import {useParams, Form, Await, useRouteLoaderData} from '@remix-run/react';
 import useWindowScroll from 'react-use/esm/useWindowScroll';
 import {Suspense, useEffect, useMemo} from 'react';
 import {CartForm} from '@shopify/hydrogen';
+import type {SerializeFrom} from '@remix-run/server-runtime';
 
 import {Text, Heading} from '~/components/Text';
 import {Link} from '~/components/Link';
@@ -20,11 +21,24 @@ import {type EnhancedMenu, useIsHomePath} from '~/lib/utils';
 import {useIsHydrated} from '~/hooks/useIsHydrated';
 import {useCartFetchers} from '~/hooks/useCartFetchers';
 import type {RootLoader} from '~/root';
+import {
+  CollectionNavStacked,
+  Nav,
+  hasGroupedCollectionNav,
+} from '~/components/Nav';
 
 import {Icons} from './elements/Icons';
 import {Button} from './Button';
 
-export function Header({title, menu}: {title: string; menu?: EnhancedMenu}) {
+export function Header({
+  title,
+  menu,
+  collectionNav,
+}: {
+  title: string;
+  menu?: EnhancedMenu;
+  collectionNav?: SerializeFrom<RootLoader>['layout']['collectionNav'];
+}) {
   const isHome = useIsHomePath();
 
   const {
@@ -51,12 +65,18 @@ export function Header({title, menu}: {title: string; menu?: EnhancedMenu}) {
     <>
       <CartDrawer isOpen={isCartOpen} onClose={closeCart} />
       {menu && (
-        <MenuDrawer isOpen={isMenuOpen} onClose={closeMenu} menu={menu} />
+        <MenuDrawer
+          isOpen={isMenuOpen}
+          onClose={closeMenu}
+          menu={menu}
+          collectionNav={collectionNav}
+        />
       )}
       <DesktopHeader
         isHome={isHome}
         title={title}
         menu={menu}
+        collectionNav={collectionNav}
         openCart={openCart}
       />
       <MobileHeader
@@ -90,15 +110,21 @@ export function MenuDrawer({
   isOpen,
   onClose,
   menu,
+  collectionNav,
 }: {
   isOpen: boolean;
   onClose: () => void;
   menu: EnhancedMenu;
+  collectionNav?: SerializeFrom<RootLoader>['layout']['collectionNav'];
 }) {
   return (
     <Drawer open={isOpen} onClose={onClose} openFrom="left" heading="Menu">
       <div className="grid">
-        <MenuMobileNav menu={menu} onClose={onClose} />
+        <MenuMobileNav
+          menu={menu}
+          onClose={onClose}
+          collectionNav={collectionNav}
+        />
       </div>
     </Drawer>
   );
@@ -107,12 +133,19 @@ export function MenuDrawer({
 function MenuMobileNav({
   menu,
   onClose,
+  collectionNav,
 }: {
   menu: EnhancedMenu;
   onClose: () => void;
+  collectionNav?: SerializeFrom<RootLoader>['layout']['collectionNav'];
 }) {
   return (
     <nav className="grid gap-4 px-6 py-4 sm:gap-6 sm:px-8 sm:py-4">
+      {hasGroupedCollectionNav(collectionNav) && (
+        <div className="pb-2 border-b border-[#E0E0E0]">
+          <CollectionNavStacked collectionNav={collectionNav} />
+        </div>
+      )}
       {/* Top level menu items */}
       {(menu?.items || []).map((item) => (
         <span key={item.id} className="block">
@@ -209,7 +242,7 @@ function MobileHeader({
       </div>
 
       <Link
-        className="flex items-center self-stretch leading-[3rem] md:leading-[4rem] justify-center flex-grow w-full h-full py-4"
+        className="flex items-center self-stretch leading-12 md:leading-16 justify-center grow w-full h-full py-4"
         to="/"
       >
         <Heading
@@ -234,12 +267,14 @@ function MobileHeader({
 function DesktopHeader({
   isHome,
   menu,
+  collectionNav,
   openCart,
   title,
 }: {
   isHome: boolean;
   openCart: () => void;
   menu?: EnhancedMenu;
+  collectionNav?: SerializeFrom<RootLoader>['layout']['collectionNav'];
   title: string;
 }) {
   const params = useParams();
@@ -303,20 +338,23 @@ function DesktopHeader({
         </div>
       </header>
       <nav className="justify-end items-center hidden gap-8 w-full lg:max-w-[980px] mx-auto text-sm py-5 sm:flex ">
-        {/* Top level menu items */}
-        {(menu?.items || []).map((item) => (
-          <Link
-            key={item.id}
-            to={item.to}
-            target={item.target}
-            prefetch="intent"
-            className={({isActive}) =>
-              isActive ? 'pb-1 border-b -mb-px' : 'pb-1'
-            }
-          >
-            {item.title}
-          </Link>
-        ))}
+        {hasGroupedCollectionNav(collectionNav) ? (
+          <Nav collectionNav={collectionNav} />
+        ) : (
+          (menu?.items || []).map((item) => (
+            <Link
+              key={item.id}
+              to={item.to}
+              target={item.target}
+              prefetch="intent"
+              className={({isActive}) =>
+                isActive ? 'pb-1 border-b -mb-px' : 'pb-1'
+              }
+            >
+              {item.title}
+            </Link>
+          ))
+        )}
         <Button
           to="https://hon-matsuba.co.jp/"
           variant="primary"
@@ -389,7 +427,7 @@ function Badge({
             dark
               ? 'text-primary bg-contrast dark:text-contrast dark:bg-primary'
               : 'text-contrast bg-primary'
-          } absolute bottom-1 right-1 text-[0.625rem] font-medium subpixel-antialiased h-3 min-w-[0.75rem] flex items-center justify-center leading-none text-center rounded-full w-auto px-[0.125rem] pb-px`}
+          } absolute bottom-1 right-1 text-[0.625rem] font-medium subpixel-antialiased h-3 min-w-3 flex items-center justify-center leading-none text-center rounded-full w-auto px-0.5 pb-px`}
         >
           <span>{count || 0}</span>
         </div>

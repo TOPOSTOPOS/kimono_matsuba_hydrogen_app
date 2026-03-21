@@ -1,5 +1,5 @@
 import type {ChangeEvent} from 'react';
-import {useRef, Suspense, useState} from 'react';
+import {useRef, Suspense, useState, useEffect} from 'react';
 import ReactDOM from 'react-dom';
 import {Disclosure, Listbox} from '@headlessui/react';
 import {defer, redirect} from '@shopify/remix-oxygen';
@@ -46,6 +46,7 @@ import {seoPayload} from '~/lib/seo.server';
 import type {Storefront} from '~/lib/type';
 import {routeHeaders} from '~/data/cache';
 import {MEDIA_FRAGMENT, PRODUCT_CARD_FRAGMENT} from '~/data/fragments';
+import {pushRecentlyViewedProductId} from '~/lib/recently-viewed-products';
 import {Modal} from '~/components/Modal';
 
 export const headers = routeHeaders;
@@ -248,6 +249,10 @@ export default function Product() {
   const {shippingPolicy, refundPolicy} = shop;
 
   const cartTotalQuantity = cart ? cart.totalQuantity : 0;
+
+  useEffect(() => {
+    pushRecentlyViewedProductId(product.id);
+  }, [product.id]);
 
   return (
     <>
@@ -520,7 +525,7 @@ export function ProductForm({
                   </p>
                   <button
                     onClick={openModal}
-                    className="relative w-full py-2 pl-3 pr-10 text-left bg-white border border-gray-300 rounded-lg shadow-md cursor-default focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary sm:text-sm"
+                    className="relative w-full py-2 pl-3 pr-10 text-left bg-white border border-gray-300 rounded-lg shadow-md cursor-default focus:outline-hidden focus:ring-1 focus:ring-primary focus:border-primary sm:text-sm"
                   >
                     <span className="block truncate">
                       {selectedBelts.length > 0
@@ -562,7 +567,7 @@ export function ProductForm({
                             足袋
                           </Listbox.Label>
                           <div className="relative mt-1">
-                            <Listbox.Button className="relative w-full py-2 pl-3 pr-10 text-left bg-white border border-gray-300 rounded-lg shadow-md cursor-default focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary sm:text-sm">
+                            <Listbox.Button className="relative w-full py-2 pl-3 pr-10 text-left bg-white border border-gray-300 rounded-lg shadow-md cursor-default focus:outline-hidden focus:ring-1 focus:ring-primary focus:border-primary sm:text-sm">
                               <span className="block truncate">
                                 {optionValues.tabiTarget || '選択してください'}
                               </span>
@@ -570,7 +575,7 @@ export function ProductForm({
                                 <IconCaret />
                               </span>
                             </Listbox.Button>
-                            <Listbox.Options className="absolute z-10 w-full py-1 mt-1 overflow-auto text-base bg-white rounded-md shadow-lg max-h-60 ring-1 ring-black ring-opacity-5 focus:outline-none sm:text-sm">
+                            <Listbox.Options className="absolute z-10 w-full py-1 mt-1 overflow-auto text-base bg-white rounded-md shadow-lg max-h-60 ring-1 ring-black ring-opacity-5 focus:outline-hidden sm:text-sm">
                               {tabiOptionTargets.map((item) => (
                                 <Listbox.Option
                                   key={item}
@@ -628,7 +633,7 @@ export function ProductForm({
                               }}
                             >
                               <div className="relative mt-1">
-                                <Listbox.Button className="relative w-full py-2 pl-3 pr-10 text-left bg-white border border-gray-300 rounded-lg shadow-md cursor-default focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary sm:text-sm">
+                                <Listbox.Button className="relative w-full py-2 pl-3 pr-10 text-left bg-white border border-gray-300 rounded-lg shadow-md cursor-default focus:outline-hidden focus:ring-1 focus:ring-primary focus:border-primary sm:text-sm">
                                   <span className="block truncate">
                                     {optionValues.tabiSize ||
                                       '選択してください'}
@@ -637,7 +642,7 @@ export function ProductForm({
                                     <IconCaret />
                                   </span>
                                 </Listbox.Button>
-                                <Listbox.Options className="absolute z-10 w-full py-1 mt-1 overflow-auto text-base bg-white rounded-md shadow-lg max-h-60 ring-1 ring-black ring-opacity-5 focus:outline-none sm:text-sm">
+                                <Listbox.Options className="absolute z-10 w-full py-1 mt-1 overflow-auto text-base bg-white rounded-md shadow-lg max-h-60 ring-1 ring-black ring-opacity-5 focus:outline-hidden sm:text-sm">
                                   {tabiOptionSizes[optionValues.tabiTarget].map(
                                     (item) => (
                                       <Listbox.Option
@@ -731,7 +736,7 @@ export function ProductForm({
                       配送時間
                     </Listbox.Label>
                     <div className="relative mt-1">
-                      <Listbox.Button className="relative w-full py-2 pl-3 pr-10 text-left bg-white border border-gray-300 rounded-lg shadow-md cursor-default focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary sm:text-sm">
+                      <Listbox.Button className="relative w-full py-2 pl-3 pr-10 text-left bg-white border border-gray-300 rounded-lg shadow-md cursor-default focus:outline-hidden focus:ring-1 focus:ring-primary focus:border-primary sm:text-sm">
                         <span className="block truncate">
                           {optionValues.deliveryTime}
                         </span>
@@ -739,7 +744,7 @@ export function ProductForm({
                           <IconCaret />
                         </span>
                       </Listbox.Button>
-                      <Listbox.Options className="absolute z-10 w-full py-1 mt-1 overflow-auto text-base bg-white rounded-md shadow-lg max-h-60 ring-1 ring-black ring-opacity-5 focus:outline-none sm:text-sm">
+                      <Listbox.Options className="absolute z-10 w-full py-1 mt-1 overflow-auto text-base bg-white rounded-md shadow-lg max-h-60 ring-1 ring-black ring-opacity-5 focus:outline-hidden sm:text-sm">
                         {sortedDeliverTimeOptions.map((item) => (
                           <Listbox.Option
                             key={item}
@@ -798,7 +803,7 @@ export function ProductForm({
                 key={option.name}
                 className="flex flex-col flex-wrap mb-4 gap-y-2 last:mb-0"
               >
-                <Heading as="legend" size="lead" className="min-w-[4rem]">
+                <Heading as="legend" size="lead" className="min-w-16">
                   {option.name}
                 </Heading>
 
@@ -824,7 +829,7 @@ export function ProductForm({
                                 'flex items-center justify-between w-full py-3 px-4 border border-primary',
                                 open
                                   ? 'rounded-b md:rounded-t md:rounded-b-none'
-                                  : 'rounded',
+                                  : 'rounded-sm',
                               )}
                             >
                               <span>{option.value}</span>
@@ -849,7 +854,7 @@ export function ProductForm({
                                         to={to}
                                         preventScrollReset
                                         className={clsx(
-                                          'text-primary w-full p-2 transition rounded flex justify-start items-center text-left cursor-pointer',
+                                          'text-primary w-full p-2 transition rounded-sm flex justify-start items-center text-left cursor-pointer',
                                           active && 'bg-primary/10',
                                         )}
                                         onClick={() => {
@@ -910,7 +915,7 @@ export function ProductForm({
                   quantity={1}
                   disabled={isDisableAddToCart}
                   className={clsx(
-                    'inline-block px-6 py-3 font-medium text-center rounded bg-primary text-contrast',
+                    'inline-block px-6 py-3 font-medium text-center rounded-sm bg-primary text-contrast',
                     isDisableAddToCart && 'opacity-50',
                   )}
                 >
@@ -1019,7 +1024,7 @@ function ProductDetailDisclosure({
               <IconClose
                 className={clsx(
                   'transition-transform transform-gpu duration-200',
-                  !open && 'rotate-[45deg]',
+                  !open && 'rotate-45',
                 )}
               />
             </div>
@@ -1087,7 +1092,7 @@ function BeltOptionModal({
                       type="checkbox"
                       value={belt.id}
                       onChange={selectBeltHandle}
-                      className="block text-black bg-white border rounded group size-4 !ring-black "
+                      className="block text-black bg-white border rounded-sm group size-4 ring-black! "
                       disabled={!belt.availableForSale}
                       checked={selectedBelts.includes(belt.id)}
                     />

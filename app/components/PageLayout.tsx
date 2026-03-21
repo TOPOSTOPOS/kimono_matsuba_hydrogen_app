@@ -1,12 +1,16 @@
+import type {SerializeFrom} from '@remix-run/server-runtime';
+import {ReactNode} from 'react';
+
 import {type LayoutQuery} from 'storefrontapi.generated';
 import {type EnhancedMenu} from '~/lib/utils';
+import type {RootLoader} from '~/root';
 
 import {Footer} from './Footer';
 import {Header} from './Header';
 
 type LayoutProps = {
   children: React.ReactNode;
-  layout?: LayoutQuery & {
+  layout?: SerializeFrom<RootLoader>['layout'] & {
     headerMenu?: EnhancedMenu | null;
     footerMenu?: EnhancedMenu | null;
   };
@@ -23,9 +27,13 @@ export function PageLayout({children, layout}: LayoutProps) {
           </a>
         </div>
         {headerMenu && layout?.shop.name && (
-          <Header title={layout.shop.name} menu={headerMenu} />
+          <Header
+            title={layout.shop.name}
+            menu={headerMenu}
+            collectionNav={layout.collectionNav}
+          />
         )}
-        <main role="main" id="mainContent" className="flex-grow">
+        <main role="main" id="mainContent" className="grow">
           {children}
         </main>
       </div>

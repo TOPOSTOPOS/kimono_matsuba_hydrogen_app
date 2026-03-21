@@ -36,19 +36,19 @@ export function Hero({
         className={clsx(
           'relative justify-end flex flex-col w-full overflow-hidden rounded-lg shadow-lg my-3',
           height === 'full'
-            ? 'h-auto sm:aspect-auto aspect-[3/2]'
-            : 'aspect-[4/5] sm:aspect-square md:aspect-[5/4] lg:aspect-[3/2] xl:aspect-[2/1]',
+            ? 'h-auto sm:aspect-auto aspect-3/2'
+            : 'aspect-4/5 sm:aspect-square md:aspect-5/4 lg:aspect-3/2 xl:aspect-2/1',
         )}
       >
-        <div className="w-full h-auto sm:aspect-auto aspect-[3/2]">
+        <div className="w-full h-auto sm:aspect-auto aspect-3/2">
           <SpreadMedia
             sizes="100vw"
-            className="object-cover w-full h-full sm:aspect-auto aspect-[3/2]"
+            className="object-cover w-full h-full sm:aspect-auto aspect-3/2"
             data={spread?.reference as Media | MediaImage | MediaVideo}
             loading={loading}
           />
         </div>
-        <div className="flex absolute bottom-0 left-0 flex-col gap-2 justify-between items-baseline px-3 py-5 w-full bg-gradient-to-t sm:gap-4 sm:px-6 md:px-8 dark:from-contrast/60 dark:text-primary from-primary/60 text-contrast">
+        <div className="flex absolute bottom-0 left-0 flex-col gap-2 justify-between items-baseline px-3 py-5 w-full bg-linear-to-t sm:gap-4 sm:px-6 md:px-8 dark:from-contrast/60 dark:text-primary from-primary/60 text-contrast">
           {heading?.value && (
             <Heading
               format

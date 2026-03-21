@@ -61,7 +61,7 @@ export default function Policies() {
       >
         <PageHeader
           heading={policy.title}
-          className="grid items-start flex-grow gap-4 md:sticky top-36 md:w-5/12"
+          className="grid items-start grow gap-4 md:sticky top-36 md:w-5/12"
         >
           <Button
             className="justify-self-start"
@@ -71,7 +71,7 @@ export default function Policies() {
             &larr; Back to Policies
           </Button>
         </PageHeader>
-        <div className="flex-grow w-full md:w-7/12">
+        <div className="grow w-full md:w-7/12">
           <div
             dangerouslySetInnerHTML={{__html: policy.body}}
             className="prose dark:prose-invert"

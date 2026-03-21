@@ -87,13 +87,13 @@ export default function AllProducts() {
             return (
               <>
                 <div className="flex items-center justify-center mt-6">
-                  <PreviousLink className="inline-block w-full px-6 py-3 font-medium text-center border rounded border-primary/10 bg-contrast text-primary">
+                  <PreviousLink className="inline-block w-full px-6 py-3 font-medium text-center border rounded-sm border-primary/10 bg-contrast text-primary">
                     {isLoading ? 'Loading...' : 'Previous'}
                   </PreviousLink>
                 </div>
                 <Grid data-test="product-grid">{itemsMarkup}</Grid>
                 <div className="flex items-center justify-center mt-6">
-                  <NextLink className="inline-block w-full px-6 py-3 font-medium text-center border rounded border-primary/10 bg-contrast text-primary">
+                  <NextLink className="inline-block w-full px-6 py-3 font-medium text-center border rounded-sm border-primary/10 bg-contrast text-primary">
                     {isLoading ? 'Loading...' : 'Next'}
                   </NextLink>
                 </div>

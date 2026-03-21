@@ -14,7 +14,8 @@ import {seoPayload} from '~/lib/seo.server';
 import {routeHeaders} from '~/data/cache';
 import type {ArticleFragment} from 'storefrontapi.generated';
 
-const BLOG_HANDLE = 'Journal';
+/** Shopify 管理画面のブログハンドル（URL `/journal` と一致） */
+const BLOG_HANDLE = 'journal';
 
 export const headers = routeHeaders;
 
@@ -49,7 +50,11 @@ export const loader = async ({
 
   const seo = seoPayload.blog({blog, url: request.url});
 
-  return json({articles, seo});
+  return json({
+    articles,
+    blogTitle: blog.title,
+    seo,
+  });
 };
 
 export const meta = ({matches}: MetaArgs<typeof loader>) => {
@@ -57,16 +62,16 @@ export const meta = ({matches}: MetaArgs<typeof loader>) => {
 };
 
 export default function Journals() {
-  const {articles} = useLoaderData<typeof loader>();
+  const {articles, blogTitle} = useLoaderData<typeof loader>();
 
   return (
     <>
-      <PageHeader heading={BLOG_HANDLE} />
+      <PageHeader heading={blogTitle} />
       <Section>
         <Grid as="ol" layout="blog">
           {articles.map((article, i) => (
             <ArticleCard
-              blogHandle={BLOG_HANDLE.toLowerCase()}
+              blogHandle={BLOG_HANDLE}
               article={article}
               key={article.id}
               loading={getImageLoadingPriority(i, 2)}
@@ -91,7 +96,7 @@ function ArticleCard({
     <li key={article.id}>
       <Link to={`/${blogHandle}/${article.handle}`}>
         {article.image && (
-          <div className="card-image aspect-[3/2]">
+          <div className="card-image aspect-3/2">
             <Image
               alt={article.image.altText || article.title}
               className="object-cover w-full"

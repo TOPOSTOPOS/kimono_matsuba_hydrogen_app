@@ -1,19 +1,25 @@
-import {
-  defer,
-  type MetaArgs,
-  type LoaderFunctionArgs,
-} from '@shopify/remix-oxygen';
+import {defer} from '@shopify/remix-oxygen';
+import type {MetaArgs, LoaderFunctionArgs} from '@shopify/remix-oxygen';
 import {Suspense} from 'react';
-import {Await, useLoaderData} from '@remix-run/react';
+import {Await, useLoaderData, useRouteLoaderData} from '@remix-run/react';
 import {getSeoMeta} from '@shopify/hydrogen';
 
 import {FeaturedCollections} from '~/components/FeaturedCollections';
 import {ProductSwimlane} from '~/components/ProductSwimlane';
+import {RecentlyViewedSwimlane} from '~/components/RecentlyViewedSwimlane';
 import {MEDIA_FRAGMENT, PRODUCT_CARD_FRAGMENT} from '~/data/fragments';
 import {getHeroPlaceholder} from '~/lib/placeholders';
 import {seoPayload} from '~/lib/seo.server';
 import {routeHeaders} from '~/data/cache';
 import {HeroSlider} from '~/components/HeroSlider';
+import {CollectionTopSellingModule} from '~/components/CollectionTopSellingModule';
+import {Nav} from '~/components/Nav';
+import type {RootLoader} from '~/root';
+
+/** トップに売れ筋ブロックを出すコレクションハンドル（空なら非表示） */
+export const HOMEPAGE_COLLECTION_TOP_SELLING_HANDLE = 'all';
+
+export const HOMEPAGE_COLLECTION_HOUMONGI_HANDLE = 'houmongi';
 
 export const headers = routeHeaders;
 
@@ -65,7 +71,6 @@ async function loadCriticalData({context}: LoaderFunctionArgs) {
  */
 function loadDeferredData({context}: LoaderFunctionArgs) {
   const {language, country} = context.storefront.i18n;
-
   const featuredProducts = context.storefront
     .query(HOMEPAGE_FEATURED_PRODUCTS_QUERY, {
       variables: {
@@ -127,6 +132,8 @@ export const meta = ({matches}: MetaArgs<typeof loader>) => {
 export default function Homepage() {
   const {heros, featuredCollections, featuredProducts} =
     useLoaderData<typeof loader>();
+  const rootData = useRouteLoaderData<RootLoader>('root');
+  const collectionNav = rootData?.layout?.collectionNav;
 
   // TODO: skeletons vs placeholders
   const skeletons = getHeroPlaceholder([{}, {}, {}]);
@@ -153,50 +160,72 @@ export default function Homepage() {
         </Suspense>
       )}
 
-      {featuredProducts && (
-        <Suspense>
-          <Await resolve={featuredProducts}>
-            {(response) => {
-              if (
-                !response ||
-                !response?.products ||
-                !response?.products?.nodes
-              ) {
-                return <></>;
-              }
-              return (
-                <ProductSwimlane
-                  products={response.products}
-                  title="おすすめ商品"
-                  count={4}
-                />
-              );
-            }}
-          </Await>
-        </Suspense>
-      )}
+      <div className="flex justify-between pt-10 mx-auto mt-9 w-full max-w-245 pb-15">
+        <div className="z-0 order-1 w-full max-w-187">
+          <RecentlyViewedSwimlane />
+          {featuredProducts && (
+            <Suspense>
+              <Await resolve={featuredProducts}>
+                {(response) => {
+                  if (
+                    !response ||
+                    !response?.products ||
+                    !response?.products?.nodes
+                  ) {
+                    return <></>;
+                  }
+                  return (
+                    <ProductSwimlane
+                      products={response.products}
+                      title="おすすめ商品"
+                      count={4}
+                    />
+                  );
+                }}
+              </Await>
+            </Suspense>
+          )}
 
-      {featuredCollections && (
-        <Suspense>
-          <Await resolve={featuredCollections}>
-            {(response) => {
-              if (
-                !response ||
-                !response?.collections ||
-                !response?.collections?.nodes
-              ) {
-                return <></>;
-              }
-              return (
-                <FeaturedCollections
-                  collections={response.collections}
-                  title="すべてのカテゴリ"
-                />
-              );
-            }}
-          </Await>
-        </Suspense>
-      )}
+          {HOMEPAGE_COLLECTION_TOP_SELLING_HANDLE ? (
+            <CollectionTopSellingModule
+              collectionHandle={HOMEPAGE_COLLECTION_TOP_SELLING_HANDLE}
+              count={10}
+            />
+          ) : null}
+
+          {HOMEPAGE_COLLECTION_HOUMONGI_HANDLE ? (
+            <CollectionTopSellingModule
+              collectionHandle={HOMEPAGE_COLLECTION_HOUMONGI_HANDLE}
+              count={10}
+            />
+          ) : null}
+
+          {featuredCollections && (
+            <Suspense>
+              <Await resolve={featuredCollections}>
+                {(response) => {
+                  if (
+                    !response ||
+                    !response?.collections ||
+                    !response?.collections?.nodes
+                  ) {
+                    return <></>;
+                  }
+                  return (
+                    <FeaturedCollections
+                      collections={response.collections}
+                      title="すべてのカテゴリ"
+                    />
+                  );
+                }}
+              </Await>
+            </Suspense>
+          )}
+        </div>
+        <div className="w-full max-w-48">
+          <Nav collectionNav={collectionNav} />
+        </div>
+      </div>
     </>
   );
 }

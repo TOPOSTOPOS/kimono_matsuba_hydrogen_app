@@ -134,6 +134,7 @@ function Layout({children}: {children?: React.ReactNode}) {
   const nonce = useNonce();
   const data = useRouteLoaderData<typeof loader>('root');
   const locale = data?.selectedLocale ?? DEFAULT_LOCALE;
+  const collectionNav = data?.layout?.collectionNav;
 
   return (
     <html lang={locale.language}>
@@ -223,6 +224,9 @@ const LAYOUT_QUERY = `#graphql
     footerMenu: menu(handle: $footerMenuHandle) {
       ...Menu
     }
+    collectionNav: collections(first: 250) {
+      nodes { ...CollectionNavItem }
+    }
   }
   fragment Shop on Shop {
     id
@@ -256,6 +260,13 @@ const LAYOUT_QUERY = `#graphql
       ...ChildMenuItem
     }
   }
+  fragment CollectionNavItem on Collection {
+    handle
+    title
+    metafield(namespace: "custom", key: "collection_categories") {
+      value
+    }
+  }
   fragment Menu on Menu {
     id
     items {
@@ -279,8 +290,8 @@ async function getLayoutData({storefront, env}: AppLoadContext) {
     Modify specific links/routes (optional)
     @see: https://shopify.dev/api/storefront/unstable/enums/MenuItemType
     e.g here we map:
-      - /blogs/news -> /news
-      - /blog/news/blog-post -> /news/blog-post
+      - /blogs/journal -> /journal
+      - /blog/journal/blog-post -> /journal/blog-post
       - /collections/all -> /products
   */
   const customPrefixes = {BLOG: '', CATALOG: 'products'};
@@ -303,5 +314,10 @@ async function getLayoutData({storefront, env}: AppLoadContext) {
       )
     : undefined;
 
-  return {shop: data.shop, headerMenu, footerMenu};
+  return {
+    shop: data.shop,
+    headerMenu,
+    footerMenu,
+    collectionNav: data.collectionNav,
+  };
 }

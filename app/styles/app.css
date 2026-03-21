@@ -1,62 +1,156 @@
-@import '@splidejs/splide/css';
+@import '@splidejs/splide/css' layer(base);
 
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import 'tailwindcss';
 
-/* Tokens */
-:root {
-  --color-primary: 20 20 20; /* Text, buttons, etc. */
-  --color-contrast: 250 250 249; /* Backgrounds, borders, etc. */
-  --color-accent: 191 72 0; /* Labels like "On sale" */
-  --font-size-fine: 0.75rem; /* text-xs */
-  --font-size-copy: 1rem; /* text-base */
-  --font-size-lead: 1.125rem; /* text-lg */
-  --font-size-heading: 2rem; /* text-2xl */
-  --font-size-display: 3rem; /* text-4xl */
-  --color-shop-pay: #5a31f4;
-  --shop-pay-button--width: 100%; /* Sets the width for the shop-pay-button web component */
-  --height-nav: 3rem;
-  --screen-height: 100vh;
-  --screen-height-dynamic: 100vh;
+@config '../../tailwind.config.js';
 
-  @media (min-width: 32em) {
-    --height-nav: 4rem;
-  }
-  @media (min-width: 48em) {
-    --height-nav: 6rem;
-    --font-size-heading: 2rem; /* text-2xl */
-    --font-size-display: 2.25rem; /* text-3xl */
-  }
-  @supports (height: 100svh) {
-    --screen-height: 100svh;
-  }
-  @supports (height: 100dvh) {
-    --screen-height-dynamic: 100dvh;
+/*
+  The default border color has changed to `currentcolor` in Tailwind CSS v4,
+  so we've added these compatibility styles to make sure everything still
+  looks the same as it did with Tailwind CSS v3.
+
+  If we ever want to remove these styles, we need to add an explicit border
+  color utility to any element that depends on these defaults.
+*/
+@layer base {
+  *,
+  ::after,
+  ::before,
+  ::backdrop,
+  ::file-selector-button {
+    border-color: var(--color-gray-200, currentcolor);
   }
 }
 
-@media (prefers-color-scheme: dark) {
+@utility article {
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    @apply font-sans text-primary;
+  }
+  @apply grid justify-center mx-auto mb-12 font-serif prose text-primary;
+  p,
+  ul,
+  li {
+    @apply mb-4 text-lg;
+  }
+  img {
+    @apply md:-mx-8 lg:-mx-16;
+
+    @media (min-width: 48em) {
+      width: calc(100% + 4rem);
+      max-width: 100vw;
+    }
+    @media (min-width: 64em) {
+      width: calc(100% + 8rem);
+    }
+  }
+}
+
+@utility swimlane {
+  @apply grid overflow-x-scroll grid-flow-col gap-4 justify-start px-6 pb-4 w-full snap-x snap-mandatory scroll-px-6;
+}
+
+@utility fadeIn {
+  opacity: 0;
+  animation: fadeInAnimation ease 500ms forwards;
+}
+
+@utility hiddenScroll {
+  scrollbar-width: none;
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+@utility absolute-center {
+  @apply absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2;
+}
+
+@utility strike {
+  position: relative;
+  &::before {
+    content: '';
+    display: block;
+    position: absolute;
+    width: 108%;
+    height: 1.5px;
+    left: -4%;
+    top: 50%;
+    transform: translateY(-50%);
+    background: rgb(var(--color-primary));
+    box-shadow: 0.5px 0.5px 0px 0.5px rgb(var(--color-contrast));
+  }
+}
+
+@utility card-image {
+  @apply flex relative justify-center items-center overflow-clip rounded-sm;
+  &::before {
+    content: ' ';
+    @apply block absolute top-0 left-0 z-10 w-full h-full rounded-sm shadow-border;
+  }
+  img {
+    @apply aspect-[inherit] w-full object-cover;
+  }
+}
+
+@layer utilities {
+  /* Tokens */
   :root {
-    --color-primary: 250 250 250;
-    --color-contrast: 32 33 36;
-    --color-accent: 235 86 40;
-  }
-}
+    --color-primary: 20 20 20; /* Text, buttons, etc. */
+    --color-contrast: 250 250 249; /* Backgrounds, borders, etc. */
+    --color-accent: 191 72 0; /* Labels like "On sale" */
+    --font-size-fine: 0.75rem; /* text-xs */
+    --font-size-copy: 1rem; /* text-base */
+    --font-size-lead: 1.125rem; /* text-lg */
+    --font-size-heading: 2rem; /* text-2xl */
+    --font-size-display: 3rem; /* text-4xl */
+    --color-shop-pay: #5a31f4;
+    --shop-pay-button--width: 100%; /* Sets the width for the shop-pay-button web component */
+    --height-nav: 3rem;
+    --screen-height: 100vh;
+    --screen-height-dynamic: 100vh;
 
-@keyframes fadeInAnimation {
-  0% {
-    opacity: 0;
+    @media (min-width: 32em) {
+      --height-nav: 4rem;
+    }
+    @media (min-width: 48em) {
+      --height-nav: 6rem;
+      --font-size-heading: 2rem; /* text-2xl */
+      --font-size-display: 2.25rem; /* text-3xl */
+    }
+    @supports (height: 100svh) {
+      --screen-height: 100svh;
+    }
+    @supports (height: 100dvh) {
+      --screen-height-dynamic: 100dvh;
+    }
   }
-  100% {
-    opacity: 1;
-  }
-}
 
-shop-pay-button {
-  width: 100%;
-  height: 3rem;
-  display: table;
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --color-primary: 250 250 250;
+      --color-contrast: 32 33 36;
+      --color-accent: 235 86 40;
+    }
+  }
+
+  @keyframes fadeInAnimation {
+    0% {
+      opacity: 0;
+    }
+    100% {
+      opacity: 1;
+    }
+  }
+
+  shop-pay-button {
+    width: 100%;
+    height: 3rem;
+    display: table;
+  }
 }
 
 @layer base {
@@ -101,84 +195,6 @@ shop-pay-button {
       &:first-child {
         @apply mt-0;
       }
-    }
-  }
-}
-
-@layer components {
-  .article {
-    h2,
-    h3,
-    h4,
-    h5,
-    h6 {
-      @apply font-sans text-primary;
-    }
-    @apply grid justify-center mx-auto mb-12 font-serif prose text-primary;
-    p,
-    ul,
-    li {
-      @apply mb-4 text-lg;
-    }
-    img {
-      @apply md:-mx-8 lg:-mx-16;
-
-      @media (min-width: 48em) {
-        width: calc(100% + 4rem);
-        max-width: 100vw;
-      }
-      @media (min-width: 64em) {
-        width: calc(100% + 8rem);
-      }
-    }
-  }
-
-  .swimlane {
-    @apply grid overflow-x-scroll grid-flow-col gap-4 justify-start px-6 pb-4 w-full snap-x snap-mandatory scroll-px-6;
-  }
-}
-
-@layer utilities {
-  .fadeIn {
-    opacity: 0;
-    animation: fadeInAnimation ease 500ms forwards;
-  }
-
-  .hiddenScroll {
-    scrollbar-width: none;
-    &::-webkit-scrollbar {
-      display: none;
-    }
-  }
-
-  .absolute-center {
-    @apply absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2;
-  }
-
-  .strike {
-    position: relative;
-    &::before {
-      content: '';
-      display: block;
-      position: absolute;
-      width: 108%;
-      height: 1.5px;
-      left: -4%;
-      top: 50%;
-      transform: translateY(-50%);
-      background: rgb(var(--color-primary));
-      box-shadow: 0.5px 0.5px 0px 0.5px rgb(var(--color-contrast));
-    }
-  }
-
-  .card-image {
-    @apply flex relative justify-center items-center overflow-clip rounded;
-    &::before {
-      content: ' ';
-      @apply block absolute top-0 left-0 z-10 w-full h-full rounded shadow-border;
-    }
-    img {
-      @apply aspect-[inherit] w-full object-cover;
     }
   }
 }
@@ -270,7 +286,7 @@ shop-pay-button {
 }
 
 .react-datepicker__input-container input {
-  @apply w-full relative !py-[0.52rem] !px-3 text-left bg-white border border-gray-300 rounded-lg shadow-md cursor-default focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary sm:text-sm !text-[#141414];
+  @apply w-full relative py-[0.52rem]! px-3! text-left bg-white border border-gray-300 rounded-lg shadow-md cursor-default focus:outline-hidden focus:ring-1 focus:ring-primary focus:border-primary sm:text-sm text-[#141414]!;
 }
 
 /* Hero Splide: 両端はみ出るスライダー・高さ100% */
@@ -296,11 +312,11 @@ shop-pay-button {
 }
 
 .bullet {
-  @apply flex size-[5px] items-center justify-center rounded-full bg-[#9e9e9e] relative  mt-[1px];
+  @apply flex size-[5px] items-center justify-center rounded-full bg-[#9e9e9e] relative  mt-px;
 }
 
 .bullet:after {
-  @apply content-[''] absolute -right-[8px] h-[1px] w-[8px] bg-[#9e9e9e];
+  @apply content-[''] absolute -right-[8px] h-px w-[8px] bg-[#9e9e9e];
 }
 
 .page-nation-wrapper.active > .bullet {
@@ -308,7 +324,7 @@ shop-pay-button {
 }
 
 .page-nation-wrapper.active .bullet:after {
-  @apply -right-[13px] top-1/2 -translate-x-1/2 h-[1px] w-[9px];
+  @apply -right-[13px] top-1/2 -translate-x-1/2 h-px w-[9px];
 }
 
 .page-nation-wrapper:last-child .bullet:after {

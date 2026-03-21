@@ -68,7 +68,7 @@ export function HeroSlider({heros, height, loading, top}: HeroSliderProps) {
           'hero-splide',
           height === 'full'
             ? ''
-            : 'aspect-[4/5] sm:aspect-square md:aspect-[5/4] lg:aspect-[3/2] xl:aspect-[2/1]',
+            : 'aspect-4/5 sm:aspect-square md:aspect-5/4 lg:aspect-3/2 xl:aspect-2/1',
         ].join(' ')}
         onMoved={handleSlideChange}
         ref={splideRef}

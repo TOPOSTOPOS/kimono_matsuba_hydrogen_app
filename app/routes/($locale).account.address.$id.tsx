@@ -198,7 +198,7 @@ export default function EditAddress() {
             value={address?.id ?? addressId}
           />
           {actionData?.formError && (
-            <div className="flex items-center justify-center mb-6 bg-red-100 rounded">
+            <div className="flex items-center justify-center mb-6 bg-red-100 rounded-sm">
               <p className="m-4 text-sm text-red-900">{actionData.formError}</p>
             </div>
           )}
@@ -335,7 +335,7 @@ export default function EditAddress() {
               name="defaultAddress"
               id="defaultAddress"
               defaultChecked={defaultAddress?.id === address?.id}
-              className="border-gray-500 rounded-sm cursor-pointer border-1"
+              className="border-gray-500 rounded-xs cursor-pointer border"
             />
             <label
               className="inline-block ml-2 text-sm cursor-pointer"
@@ -346,7 +346,7 @@ export default function EditAddress() {
           </div>
           <div className="mt-8">
             <Button
-              className="w-full rounded focus:shadow-outline"
+              className="w-full rounded-sm focus:shadow-outline"
               type="submit"
               variant="primary"
               disabled={state !== 'idle'}
@@ -357,7 +357,7 @@ export default function EditAddress() {
           <div>
             <Button
               to=".."
-              className="w-full mt-2 rounded focus:shadow-outline"
+              className="w-full mt-2 rounded-sm focus:shadow-outline"
               variant="secondary"
             >
               Cancel

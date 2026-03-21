@@ -27,7 +27,7 @@ export function Footer({menu}: {menu?: EnhancedMenu}) {
       divider={isHome ? 'none' : 'top'}
       as="footer"
       role="contentinfo"
-      className={`grid overflow-hidden grid-cols-1 grid-flow-row gap-6 items-start px-6 py-8 w-full bg-white min-h-[25rem] md:px-8 lg:px-12 md:gap-8 lg:gap-12 md:grid-cols-2 lg:grid-cols-${itemsCount} dark:bg-contrast dark:text-primary text-contrast`}
+      className={`grid overflow-hidden grid-cols-1 grid-flow-row gap-6 items-start px-6 py-8 w-full bg-white min-h-100 md:px-8 lg:px-12 md:gap-8 lg:gap-12 md:grid-cols-2 lg:grid-cols-${itemsCount} dark:bg-contrast dark:text-primary text-contrast`}
     >
       <FooterMenu menu={menu} />
       <div className="hidden">
