@@ -242,7 +242,7 @@ function MobileHeader({
       </div>
 
       <Link
-        className="flex items-center self-stretch leading-12 md:leading-16 justify-center grow w-full h-full py-4"
+        className="flex justify-center items-center self-stretch py-4 w-full h-full leading-12 md:leading-16 grow"
         to="/"
       >
         <Heading
@@ -283,10 +283,8 @@ function DesktopHeader({
     <>
       <header
         role="banner"
-        className={`${
-          isHome
-            ? 'text-black bg-white dark:text-primary shadow-darkHeader'
-            : 'text-primary'
+        className={`bg-white shadow-sm ${
+          isHome ? 'text-black dark:text-primary' : 'text-primary'
         } ${
           !isHome && y > 50 && ' shadow-lightHeader'
         } hidden lg:flex lg:flex-col items-end sticky transition duration-300 backdrop-blur-lg z-40 top-0 justify-between w-full leading-none gap-4 py-4 `}
@@ -337,11 +335,9 @@ function DesktopHeader({
           </div>
         </div>
       </header>
-      <nav className="justify-end items-center hidden gap-8 w-full lg:max-w-[980px] mx-auto text-sm py-5 sm:flex ">
-        {hasGroupedCollectionNav(collectionNav) ? (
-          <Nav collectionNav={collectionNav} />
-        ) : (
-          (menu?.items || []).map((item) => (
+      {isHome && (
+        <nav className="justify-end items-center hidden gap-8 w-full lg:max-w-[980px] mx-auto text-sm py-5 sm:flex ">
+          {(menu?.items || []).map((item) => (
             <Link
               key={item.id}
               to={item.to}
@@ -353,16 +349,16 @@ function DesktopHeader({
             >
               {item.title}
             </Link>
-          ))
-        )}
-        <Button
-          to="https://hon-matsuba.co.jp/"
-          variant="primary"
-          target="_blank"
-        >
-          来店予約
-        </Button>
-      </nav>
+          ))}
+          <Button
+            to="https://hon-matsuba.co.jp/"
+            variant="primary"
+            target="_blank"
+          >
+            来店予約
+          </Button>
+        </nav>
+      )}
     </>
   );
 }

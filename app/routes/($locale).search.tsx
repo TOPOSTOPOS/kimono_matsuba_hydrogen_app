@@ -3,7 +3,7 @@ import {
   type MetaArgs,
   type LoaderFunctionArgs,
 } from '@shopify/remix-oxygen';
-import {Await, Form, useLoaderData} from '@remix-run/react';
+import {Await, Form, useLoaderData, useRouteLoaderData} from '@remix-run/react';
 import {Suspense} from 'react';
 import {
   Pagination,
@@ -21,6 +21,8 @@ import {FeaturedCollections} from '~/components/FeaturedCollections';
 import {PRODUCT_CARD_FRAGMENT} from '~/data/fragments';
 import {getImageLoadingPriority, PAGINATION_SIZE} from '~/lib/const';
 import {seoPayload} from '~/lib/seo.server';
+import {Nav} from '~/components/Nav';
+import type {RootLoader} from '~/root';
 
 import {
   getFeaturedData,
@@ -83,61 +85,71 @@ export default function Search() {
     useLoaderData<typeof loader>();
   const noResults = products?.nodes?.length === 0;
 
+  const rootData = useRouteLoaderData<RootLoader>('root');
+  const collectionNav = rootData?.layout?.collectionNav;
+
   return (
     <>
-      <PageHeader>
-        <Heading as="h1" size="copy">
-          キーワード検索
-        </Heading>
-        <Form method="get" className="relative flex w-full text-base">
-          <Input
-            defaultValue={searchTerm}
-            name="q"
-            placeholder="キーワードを入力してください"
-            type="search"
-            variant="search"
-          />
-          <button className="absolute right-0 py-2" type="submit">
-            検索する
-          </button>
-        </Form>
-      </PageHeader>
-      {!searchTerm || noResults ? (
-        <NoResults
-          noResults={noResults}
-          recommendations={noResultRecommendations}
-        />
-      ) : (
-        <Section>
-          <Pagination connection={products}>
-            {({nodes, isLoading, NextLink, PreviousLink}) => {
-              const itemsMarkup = nodes.map((product, i) => (
-                <ProductCard
-                  key={product.id}
-                  product={product}
-                  loading={getImageLoadingPriority(i)}
-                />
-              ));
+      <div className="flex justify-between pt-10 mx-auto mt-9 w-full max-w-245 pb-15">
+        <div className="z-0 order-1 w-full max-w-187">
+          <PageHeader className="sm:pt-0! sm:px-0!">
+            <Heading as="h1" size="copy">
+              キーワード検索
+            </Heading>
+            <Form method="get" className="flex relative w-full text-base">
+              <Input
+                defaultValue={searchTerm}
+                name="q"
+                placeholder="キーワードを入力してください"
+                type="search"
+                variant="search"
+              />
+              <button className="absolute right-0 py-2" type="submit">
+                検索する
+              </button>
+            </Form>
+          </PageHeader>
+          {!searchTerm || noResults ? (
+            <NoResults
+              noResults={noResults}
+              recommendations={noResultRecommendations}
+            />
+          ) : (
+            <Section>
+              <Pagination connection={products}>
+                {({nodes, isLoading, NextLink, PreviousLink}) => {
+                  const itemsMarkup = nodes.map((product, i) => (
+                    <ProductCard
+                      key={product.id}
+                      product={product}
+                      loading={getImageLoadingPriority(i)}
+                    />
+                  ));
 
-              return (
-                <>
-                  <div className="flex items-center justify-center mt-6">
-                    <PreviousLink className="inline-block w-full px-6 py-3 font-medium text-center border rounded-sm border-primary/10 bg-contrast text-primary">
-                      {isLoading ? 'Loading...' : 'Previous'}
-                    </PreviousLink>
-                  </div>
-                  <Grid data-test="product-grid">{itemsMarkup}</Grid>
-                  <div className="flex items-center justify-center mt-6">
-                    <NextLink className="inline-block w-full px-6 py-3 font-medium text-center border rounded-sm border-primary/10 bg-contrast text-primary">
-                      {isLoading ? 'Loading...' : 'Next'}
-                    </NextLink>
-                  </div>
-                </>
-              );
-            }}
-          </Pagination>
-        </Section>
-      )}
+                  return (
+                    <>
+                      <div className="flex justify-center items-center mt-6">
+                        <PreviousLink className="inline-block px-6 py-3 w-full font-medium text-center rounded-sm border border-primary/10 bg-contrast text-primary">
+                          {isLoading ? 'Loading...' : 'Previous'}
+                        </PreviousLink>
+                      </div>
+                      <Grid data-test="product-grid">{itemsMarkup}</Grid>
+                      <div className="flex justify-center items-center mt-6">
+                        <NextLink className="inline-block px-6 py-3 w-full font-medium text-center rounded-sm border border-primary/10 bg-contrast text-primary">
+                          {isLoading ? 'Loading...' : 'Next'}
+                        </NextLink>
+                      </div>
+                    </>
+                  );
+                }}
+              </Pagination>
+            </Section>
+          )}
+        </div>
+        <div className="hidden w-full max-w-48 sm:block">
+          <Nav collectionNav={collectionNav} />
+        </div>
+      </div>
       <Analytics.SearchView data={{searchTerm, searchResults: products}} />
     </>
   );

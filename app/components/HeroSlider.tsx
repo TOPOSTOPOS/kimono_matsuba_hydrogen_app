@@ -29,10 +29,15 @@ export function HeroSlider({heros, height, loading, top}: HeroSliderProps) {
       ? {left: '10%', right: '10%'}
       : {left: '30%', right: '30%'},
     gap: '1rem',
-    arrows: false,
+    arrows: true,
     pagination: false,
     drag: true,
     autoplay: true,
+    breakpoints: {
+      768: {
+        arrows: false,
+      },
+    },
   };
   // SSR は false、クライアント初回も false → useEffect で true にする。
   // HMR で他ファイルが変わった場合は isClientReady が true のまま残るため、

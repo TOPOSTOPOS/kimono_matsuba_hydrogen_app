@@ -160,7 +160,7 @@ export default function Homepage() {
         </Suspense>
       )}
 
-      <div className="flex justify-between pt-10 mx-auto mt-9 w-full max-w-245 pb-15">
+      <div className="flex justify-between mx-auto mt-9 w-full sm:pt-10 max-w-245 pb-15">
         <div className="z-0 order-1 w-full max-w-187">
           <RecentlyViewedSwimlane />
           {featuredProducts && (
@@ -222,7 +222,7 @@ export default function Homepage() {
             </Suspense>
           )}
         </div>
-        <div className="w-full max-w-48">
+        <div className="hidden w-full max-w-48 sm:block">
           <Nav collectionNav={collectionNav} />
         </div>
       </div>

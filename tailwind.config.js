@@ -1,5 +1,5 @@
-import formsPlugin from '@tailwindcss/forms';
-import typographyPlugin from '@tailwindcss/typography';
+import formsPlugin from '@tailwindcss/forms'
+import typographyPlugin from '@tailwindcss/typography'
 
 /** @type {import('tailwindcss').Config} */
 export default {
@@ -17,13 +17,6 @@ export default {
         md: '48em',
         lg: '64em',
         xl: '80em',
-        '2xl': '96em',
-        'sm-max': {max: '48em'},
-        'sm-only': {min: '32em', max: '48em'},
-        'md-only': {min: '48em', max: '64em'},
-        'lg-only': {min: '64em', max: '80em'},
-        'xl-only': {min: '80em', max: '96em'},
-        '2xl-only': {min: '96em'},
       },
       spacing: {
         nav: 'var(--height-nav)',
@@ -61,4 +54,4 @@ export default {
     },
   },
   plugins: [formsPlugin, typographyPlugin],
-};
+}

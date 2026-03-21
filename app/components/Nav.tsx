@@ -193,7 +193,7 @@ function CollectionNavGroup({
       >
         {title}
       </Text>
-      <div className="flex flex-col w-full">
+      <div className="flex flex-col gap-1 w-full">
         {collections.map((item) => (
           <Link
             key={item.handle}
@@ -201,13 +201,11 @@ function CollectionNavGroup({
             prefetch="intent"
             className={({isActive}) =>
               isActive
-                ? 'border-b -mb-px w-full rounded-sm text-sm flex gap-2 items-center justify-between px-1 py-2 transition-colors'
-                : 'w-full '
+                ? '-mb-px w-full flex gap-2 items-center justify-between p-2 text-sm rounded-sm transition-colors duration-300 bg-primary/5'
+                : 'w-full flex gap-2 justify-between items-center p-2 text-sm rounded-sm transition-colors duration-300 hover:bg-primary/5'
             }
           >
-            <span className="flex gap-2 justify-between items-center px-1 py-2 text-sm rounded-sm transition-colors hover:opacity-50">
-              {item.title}
-            </span>
+            <span className="">{item.title}</span>
           </Link>
         ))}
       </div>

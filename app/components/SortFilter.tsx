@@ -46,23 +46,23 @@ export function SortFilter({
   const [isOpen, setIsOpen] = useState(false);
   return (
     <>
-      <div className="flex items-center justify-between w-full">
+      <div className="flex justify-between items-center w-full">
         <button
           onClick={() => setIsOpen(!isOpen)}
           className={
-            'relative flex items-center justify-center w-8 h-8 focus:ring-primary/5'
+            'flex relative justify-center items-center w-8 h-8 focus:ring-primary/5'
           }
         >
           <IconFilters />
         </button>
         <SortMenu />
       </div>
-      <div className="flex flex-col flex-wrap md:flex-row">
+      <div className="flex flex-col">
         <div
           className={`transition-all duration-200 ${
             isOpen
-              ? 'opacity-100 min-w-full md:min-w-[240px] md:w-[240px] md:pr-8 max-h-full'
-              : 'opacity-0 md:min-w-0 md:w-0 pr-0 max-h-0 md:max-h-full'
+              ? 'min-w-full max-h-full opacity-100 md:min-w-[240px] md:w-[240px] md:pr-8'
+              : 'pr-0 max-h-0 opacity-0 md:min-w-0 md:w-0'
           }`}
         >
           <FiltersDrawer filters={filters} appliedFilters={appliedFilters} />
@@ -123,7 +123,7 @@ export function FiltersDrawer({
             <Disclosure as="div" key={filter.id} className="w-full">
               {({open}) => (
                 <>
-                  <Disclosure.Button className="flex justify-between w-full py-4">
+                  <Disclosure.Button className="flex justify-between py-4 w-full">
                     <Text size="lead">{filter.label}</Text>
                     <IconCaret direction={open ? 'up' : 'down'} />
                   </Disclosure.Button>
@@ -161,7 +161,7 @@ function AppliedFilters({filters = []}: {filters: AppliedFilter[]}) {
           return (
             <Link
               to={getAppliedFilterLink(filter, params, location)}
-              className="flex px-2 border rounded-full gap"
+              className="flex px-2 rounded-full border gap"
               key={`${filter.label}-${JSON.stringify(filter.filter)}`}
             >
               <span className="grow">{filter.label}</span>
@@ -310,23 +310,11 @@ function filterInputToParams(
 
 export default function SortMenu() {
   const items: {label: string; key: SortParam}[] = [
-    {label: 'Featured', key: 'featured'},
-    {
-      label: 'Price: Low - High',
-      key: 'price-low-high',
-    },
-    {
-      label: 'Price: High - Low',
-      key: 'price-high-low',
-    },
-    {
-      label: 'Best Selling',
-      key: 'best-selling',
-    },
-    {
-      label: 'Newest',
-      key: 'newest',
-    },
+    {label: 'おすすめ', key: 'featured'},
+    {label: '価格の安い順', key: 'price-low-high'},
+    {label: '価格の高い順', key: 'price-high-low'},
+    {label: '売れ筋順', key: 'best-selling'},
+    {label: '新着順', key: 'newest'},
   ];
   const [params] = useSearchParams();
   const location = useLocation();
@@ -336,21 +324,21 @@ export default function SortMenu() {
     <Menu as="div" className="relative z-40">
       <Menu.Button className="flex items-center">
         <span className="px-2">
-          <span className="px-2 font-medium">並び順：</span>
-          <span>{(activeItem || items[0]).label}</span>
+          <span className="px-2 text-xs font-medium">並び順：</span>
+          <span className="text-xs">{(activeItem || items[0]).label}</span>
         </span>
         <IconCaret />
       </Menu.Button>
 
       <Menu.Items
         as="nav"
-        className="absolute right-0 flex flex-col p-4 text-right rounded-xs bg-contrast"
+        className="flex absolute right-0 flex-col p-4 text-right rounded-xs bg-contrast"
       >
         {items.map((item) => (
           <Menu.Item key={item.label}>
             {() => (
               <Link
-                className={`block text-sm pb-2 px-3 ${
+                className={`block text-xs pb-2 px-3 ${
                   activeItem?.key === item.key ? 'font-bold' : 'font-normal'
                 }`}
                 to={getSortLink(item.key, params, location)}

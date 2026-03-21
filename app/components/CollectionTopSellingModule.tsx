@@ -88,7 +88,7 @@ export function CollectionTopSellingModule({
 
   return (
     <Section padding="y">
-      <div className="flex flex-wrap gap-4 justify-between items-baseline px-6 md:pr-0! lg:pr-0! md:pl-8 lg:pl-12 md:mb-6">
+      <div className="flex flex-wrap gap-4 justify-between items-baseline px-6 md:pr-0! lg:pr-0! md:pl-0 lg:pl-0 md:mb-6">
         {displayTitle ? (
           <Heading size="lead" className="mb-0">
             {displayTitle} 人気ランキング
@@ -116,7 +116,7 @@ export function CollectionTopSellingModule({
           </div>
         </div>
       ) : (
-        <div className="swimlane hiddenScroll md:pb-8 md:scroll-px-8 lg:scroll-px-12 md:px-8 lg:px-12">
+        <div className="swimlane hiddenScroll md:pb-8 md:scroll-px-8 lg:scroll-px-12 md:px-0 lg:px-0">
           {visible.map((product) => (
             <ProductCard
               product={product}
