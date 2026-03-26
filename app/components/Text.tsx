@@ -72,7 +72,7 @@ export function Heading({
   width?: 'default' | 'narrow' | 'wide';
 } & React.HTMLAttributes<HTMLHeadingElement>) {
   const sizes = {
-    display: 'font-bold text-display',
+    display: 'font-bold text-2xl',
     heading: 'font-bold text-heading',
     lead: 'font-bold text-lead',
     copy: 'font-medium text-copy',
@@ -118,10 +118,10 @@ export function Section({
   [key: string]: any;
 }) {
   const paddings = {
-    x: 'px-6 md:px-8 lg:px-12',
+    x: 'px-6 md:px-0 lg:px-0',
     y: 'py-6 md:py-8 lg:py-12',
     swimlane: 'pt-4 md:pt-8 lg:pt-12 md:pb-4 lg:pb-8',
-    all: 'p-6 md:p-8 lg:p-12',
+    all: 'p-6 md:p-0 lg:p-0',
   };
 
   const dividers = {

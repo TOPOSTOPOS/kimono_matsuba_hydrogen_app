@@ -1,5 +1,5 @@
 import type {ChangeEvent} from 'react';
-import {useRef, Suspense, useState} from 'react';
+import {useRef, Suspense, useState, useEffect} from 'react';
 import ReactDOM from 'react-dom';
 import {Disclosure, Listbox} from '@headlessui/react';
 import {defer, redirect} from '@shopify/remix-oxygen';
@@ -15,6 +15,7 @@ import {
   VariantSelector,
   getSelectedProductOptions,
   Analytics,
+  ShopPayButton,
 } from '@shopify/hydrogen';
 import invariant from 'tiny-invariant';
 import clsx from 'clsx';
@@ -46,7 +47,9 @@ import {seoPayload} from '~/lib/seo.server';
 import type {Storefront} from '~/lib/type';
 import {routeHeaders} from '~/data/cache';
 import {MEDIA_FRAGMENT, PRODUCT_CARD_FRAGMENT} from '~/data/fragments';
+import {pushRecentlyViewedProductId} from '~/lib/recently-viewed-products';
 import {Modal} from '~/components/Modal';
+import {RecentlyViewedSwimlane} from '~/components/RecentlyViewedSwimlane';
 
 export const headers = routeHeaders;
 
@@ -249,23 +252,26 @@ export default function Product() {
 
   const cartTotalQuantity = cart ? cart.totalQuantity : 0;
 
+  useEffect(() => {
+    pushRecentlyViewedProductId(product.id);
+  }, [product.id]);
+
   return (
-    <>
-      <Section className="px-0 md:px-8 lg:px-12">
-        <div className="grid items-start md:gap-6 lg:gap-20 md:grid-cols-2 lg:grid-cols-3">
-          <ProductGallery
-            media={media.nodes}
-            className="w-full lg:col-span-2"
-          />
-          <div className="sticky md:-mb-nav md:top-nav md:-translate-y-nav md:h-screen md:pt-nav hiddenScroll md:overflow-y-scroll">
-            <section className="flex flex-col w-full max-w-xl gap-8 p-6 md:mx-auto md:max-w-sm md:px-0">
+    <div className="bg-white">
+      <Section className="px-0 mx-auto w-full md:px-8 lg:px-12 max-w-245">
+        <div className="grid items-start mt-9 md:gap-6 lg:gap-20 md:grid-cols-2 lg:grid-cols-2">
+          <ProductGallery media={media.nodes} className="w-full basis-1/2" />
+          <div className="basis-1/2">
+            <section className="flex flex-col gap-8 p-6 w-full sm:pt-0 md:mx-auto md:px-0">
               <div className="grid gap-2">
-                <Heading as="h1" className="whitespace-normal">
+                {vendor && (
+                  <Text className={'text-sm font-medium opacity-50'}>
+                    {vendor}
+                  </Text>
+                )}
+                <Heading as="h1" className="text-xl! whitespace-normal">
                   {title}
                 </Heading>
-                {vendor && (
-                  <Text className={'opacity-50 font-medium'}>{vendor}</Text>
-                )}
               </div>
               <Suspense
                 fallback={
@@ -310,16 +316,21 @@ export default function Product() {
           </div>
         </div>
       </Section>
-      <Suspense fallback={<Skeleton className="h-32" />}>
-        <Await
-          errorElement="There was a problem loading related products"
-          resolve={recommended}
-        >
-          {(products) => (
-            <ProductSwimlane title="Related Products" products={products} />
-          )}
-        </Await>
-      </Suspense>
+      <div className="bg-[#fafaf9] mt-12 md:mt-20">
+        <Section padding="x" className="mx-auto max-w-245">
+          <Suspense fallback={<Skeleton className="h-32" />}>
+            <Await
+              errorElement="There was a problem loading related products"
+              resolve={recommended}
+            >
+              {(products) => (
+                <ProductSwimlane title="おすすめ商品" products={products} />
+              )}
+            </Await>
+          </Suspense>
+          <RecentlyViewedSwimlane />
+        </Section>
+      </div>
       <Analytics.ProductView
         data={{
           products: [
@@ -335,7 +346,7 @@ export default function Product() {
           ],
         }}
       />
-    </>
+    </div>
   );
 }
 
@@ -415,6 +426,8 @@ export function ProductForm({
     selectedVariant?.price?.amount &&
     selectedVariant?.compareAtPrice?.amount &&
     selectedVariant?.price?.amount < selectedVariant?.compareAtPrice?.amount;
+
+  const [quantity, setQuantity] = useState(1);
 
   const navigate = useNavigate();
 
@@ -510,7 +523,25 @@ export function ProductForm({
   return (
     <form className="grid gap-10" encType="multipart/form-data">
       <div className="grid gap-5">
-        {!isOutOfStock && (
+        <div className="flex gap-1 items-end">
+          <Money
+            withoutTrailingZeros
+            data={selectedVariant?.price!}
+            as="span"
+            data-test="price"
+            className="inline-block text-2xl font-bold leading-none"
+          />
+          <span className="inline-block text-[10px]">税込</span>
+        </div>
+        {isOnSale && (
+          <Money
+            withoutTrailingZeros
+            data={selectedVariant?.compareAtPrice!}
+            as="span"
+            className="opacity-50 strike"
+          />
+        )}
+        {/* {!isOutOfStock && (
           <div>
             <div className="grid gap-2">
               {isEnableBeltOption && belts && (
@@ -520,7 +551,7 @@ export function ProductForm({
                   </p>
                   <button
                     onClick={openModal}
-                    className="relative w-full py-2 pl-3 pr-10 text-left bg-white border border-gray-300 rounded-lg shadow-md cursor-default focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary sm:text-sm"
+                    className="relative py-2 pr-10 pl-3 w-full text-left bg-white rounded-lg border border-gray-300 shadow-md cursor-default focus:outline-hidden focus:ring-1 focus:ring-primary focus:border-primary sm:text-sm"
                   >
                     <span className="block truncate">
                       {selectedBelts.length > 0
@@ -531,7 +562,7 @@ export function ProductForm({
                             .join(', ')
                         : '選択してください'}
                     </span>
-                    <span className="absolute inset-y-0 right-0 flex items-center pr-2 pointer-events-none">
+                    <span className="flex absolute inset-y-0 right-0 items-center pr-2 pointer-events-none">
                       <IconCaret />
                     </span>
                   </button>
@@ -562,15 +593,15 @@ export function ProductForm({
                             足袋
                           </Listbox.Label>
                           <div className="relative mt-1">
-                            <Listbox.Button className="relative w-full py-2 pl-3 pr-10 text-left bg-white border border-gray-300 rounded-lg shadow-md cursor-default focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary sm:text-sm">
+                            <Listbox.Button className="relative py-2 pr-10 pl-3 w-full text-left bg-white rounded-lg border border-gray-300 shadow-md cursor-default focus:outline-hidden focus:ring-1 focus:ring-primary focus:border-primary sm:text-sm">
                               <span className="block truncate">
                                 {optionValues.tabiTarget || '選択してください'}
                               </span>
-                              <span className="absolute inset-y-0 right-0 flex items-center pr-2 pointer-events-none">
+                              <span className="flex absolute inset-y-0 right-0 items-center pr-2 pointer-events-none">
                                 <IconCaret />
                               </span>
                             </Listbox.Button>
-                            <Listbox.Options className="absolute z-10 w-full py-1 mt-1 overflow-auto text-base bg-white rounded-md shadow-lg max-h-60 ring-1 ring-black ring-opacity-5 focus:outline-none sm:text-sm">
+                            <Listbox.Options className="overflow-auto absolute z-10 py-1 mt-1 w-full max-h-60 text-base bg-white rounded-md ring-1 ring-black ring-opacity-5 shadow-lg focus:outline-hidden sm:text-sm">
                               {tabiOptionTargets.map((item) => (
                                 <Listbox.Option
                                   key={item}
@@ -602,7 +633,7 @@ export function ProductForm({
                                             active
                                               ? 'text-primary'
                                               : 'text-primary-dark',
-                                            'absolute inset-y-0 left-0 flex items-center pl-3',
+                                            'flex absolute inset-y-0 left-0 items-center pl-3',
                                           )}
                                         >
                                           <IconCheck />
@@ -628,16 +659,16 @@ export function ProductForm({
                               }}
                             >
                               <div className="relative mt-1">
-                                <Listbox.Button className="relative w-full py-2 pl-3 pr-10 text-left bg-white border border-gray-300 rounded-lg shadow-md cursor-default focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary sm:text-sm">
+                                <Listbox.Button className="relative py-2 pr-10 pl-3 w-full text-left bg-white rounded-lg border border-gray-300 shadow-md cursor-default focus:outline-hidden focus:ring-1 focus:ring-primary focus:border-primary sm:text-sm">
                                   <span className="block truncate">
                                     {optionValues.tabiSize ||
                                       '選択してください'}
                                   </span>
-                                  <span className="absolute inset-y-0 right-0 flex items-center pr-2 pointer-events-none">
+                                  <span className="flex absolute inset-y-0 right-0 items-center pr-2 pointer-events-none">
                                     <IconCaret />
                                   </span>
                                 </Listbox.Button>
-                                <Listbox.Options className="absolute z-10 w-full py-1 mt-1 overflow-auto text-base bg-white rounded-md shadow-lg max-h-60 ring-1 ring-black ring-opacity-5 focus:outline-none sm:text-sm">
+                                <Listbox.Options className="overflow-auto absolute z-10 py-1 mt-1 w-full max-h-60 text-base bg-white rounded-md ring-1 ring-black ring-opacity-5 shadow-lg focus:outline-hidden sm:text-sm">
                                   {tabiOptionSizes[optionValues.tabiTarget].map(
                                     (item) => (
                                       <Listbox.Option
@@ -670,7 +701,7 @@ export function ProductForm({
                                                   active
                                                     ? 'text-primary'
                                                     : 'text-primary-dark',
-                                                  'absolute inset-y-0 left-0 flex items-center pl-3',
+                                                  'flex absolute inset-y-0 left-0 items-center pl-3',
                                                 )}
                                               >
                                                 <IconCheck />
@@ -731,15 +762,15 @@ export function ProductForm({
                       配送時間
                     </Listbox.Label>
                     <div className="relative mt-1">
-                      <Listbox.Button className="relative w-full py-2 pl-3 pr-10 text-left bg-white border border-gray-300 rounded-lg shadow-md cursor-default focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary sm:text-sm">
+                      <Listbox.Button className="relative py-2 pr-10 pl-3 w-full text-left bg-white rounded-lg border border-gray-300 shadow-md cursor-default focus:outline-hidden focus:ring-1 focus:ring-primary focus:border-primary sm:text-sm">
                         <span className="block truncate">
                           {optionValues.deliveryTime}
                         </span>
-                        <span className="absolute inset-y-0 right-0 flex items-center pr-2 pointer-events-none">
+                        <span className="flex absolute inset-y-0 right-0 items-center pr-2 pointer-events-none">
                           <IconCaret />
                         </span>
                       </Listbox.Button>
-                      <Listbox.Options className="absolute z-10 w-full py-1 mt-1 overflow-auto text-base bg-white rounded-md shadow-lg max-h-60 ring-1 ring-black ring-opacity-5 focus:outline-none sm:text-sm">
+                      <Listbox.Options className="overflow-auto absolute z-10 py-1 mt-1 w-full max-h-60 text-base bg-white rounded-md ring-1 ring-black ring-opacity-5 shadow-lg focus:outline-hidden sm:text-sm">
                         {sortedDeliverTimeOptions.map((item) => (
                           <Listbox.Option
                             key={item}
@@ -769,7 +800,7 @@ export function ProductForm({
                                       active
                                         ? 'text-primary'
                                         : 'text-primary-dark',
-                                      'absolute inset-y-0 left-0 flex items-center pl-3',
+                                      'flex absolute inset-y-0 left-0 items-center pl-3',
                                     )}
                                   >
                                     <IconCheck />
@@ -786,7 +817,7 @@ export function ProductForm({
               </div>
             </div>
           </div>
-        )}
+        )} */}
         <VariantSelector
           handle={product.handle}
           options={product.options.filter((option) => option.values.length > 1)}
@@ -796,13 +827,13 @@ export function ProductForm({
             return (
               <div
                 key={option.name}
-                className="flex flex-col flex-wrap mb-4 gap-y-2 last:mb-0"
+                className="flex flex-col flex-wrap gap-y-2 mb-4 last:mb-0"
               >
-                <Heading as="legend" size="lead" className="min-w-[4rem]">
+                <Heading as="legend" size="lead" className="text-sm min-w-16">
                   {option.name}
                 </Heading>
 
-                <div className="flex flex-wrap items-baseline gap-4">
+                <div className="flex flex-wrap gap-4 items-baseline">
                   {option.values.length > 7 ? (
                     <div className="relative w-full">
                       <Listbox
@@ -821,10 +852,10 @@ export function ProductForm({
                             <Listbox.Button
                               ref={closeRef}
                               className={clsx(
-                                'flex items-center justify-between w-full py-3 px-4 border border-primary',
+                                'flex justify-between items-center px-4 py-3 w-full border border-primary',
                                 open
                                   ? 'rounded-b md:rounded-t md:rounded-b-none'
-                                  : 'rounded',
+                                  : 'rounded-sm',
                               )}
                             >
                               <span>{option.value}</span>
@@ -833,7 +864,7 @@ export function ProductForm({
                             </Listbox.Button>
                             <Listbox.Options
                               className={clsx(
-                                'border-primary bg-contrast absolute bottom-12 z-30 grid h-48 w-full overflow-y-scroll rounded-t border px-2 py-2 transition-[max-height] duration-150 sm:bottom-auto md:rounded-b md:rounded-t-none md:border-t-0 md:border-b',
+                                'grid overflow-y-scroll absolute bottom-12 z-30 px-2 py-2 w-full h-48 rounded-t border duration-150 border-primary bg-contrast transition-[max-height] sm:bottom-auto md:rounded-b md:rounded-t-none md:border-t-0 md:border-b',
                                 open ? 'max-h-48' : 'max-h-0',
                               )}
                             >
@@ -849,7 +880,7 @@ export function ProductForm({
                                         to={to}
                                         preventScrollReset
                                         className={clsx(
-                                          'text-primary w-full p-2 transition rounded flex justify-start items-center text-left cursor-pointer',
+                                          'text-primary w-full p-2 transition rounded-sm flex justify-start items-center text-left cursor-pointer',
                                           active && 'bg-primary/10',
                                         )}
                                         onClick={() => {
@@ -881,8 +912,10 @@ export function ProductForm({
                         prefetch="intent"
                         replace
                         className={clsx(
-                          'leading-none py-1 border-b-[1.5px] cursor-pointer transition-all duration-200',
-                          isActive ? 'border-primary/50' : 'border-primary/0',
+                          'p-3 text-sm leading-none rounded-sm transition-all duration-200 cursor-pointer',
+                          isActive
+                            ? 'text-white border-primary/50 bg-primary/90'
+                            : 'border-primary/0',
                           isAvailable ? 'opacity-100' : 'opacity-50',
                         )}
                       >
@@ -896,7 +929,7 @@ export function ProductForm({
           }}
         </VariantSelector>
         {selectedVariant && (
-          <div className="grid items-stretch gap-4">
+          <div className="grid gap-4 items-stretch">
             {isOutOfStock ? (
               <Button variant="secondary" disabled>
                 <Text>SOLD OUT</Text>
@@ -910,30 +943,15 @@ export function ProductForm({
                   quantity={1}
                   disabled={isDisableAddToCart}
                   className={clsx(
-                    'inline-block px-6 py-3 font-medium text-center rounded bg-primary text-contrast',
+                    'inline-block px-6 py-3 font-medium text-center rounded-sm bg-[#361d9a] text-contrast',
                     isDisableAddToCart && 'opacity-50',
                   )}
                 >
                   <Text
                     as="span"
-                    className="flex items-center justify-center gap-2"
+                    className="flex gap-2 justify-center items-center"
                   >
                     <span className="font-bold">カートに追加</span>{' '}
-                    <span>·</span>{' '}
-                    <Money
-                      withoutTrailingZeros
-                      data={selectedVariant?.price!}
-                      as="span"
-                      data-test="price"
-                    />
-                    {isOnSale && (
-                      <Money
-                        withoutTrailingZeros
-                        data={selectedVariant?.compareAtPrice!}
-                        as="span"
-                        className="opacity-50 strike"
-                      />
-                    )}
                   </Text>
                 </AddToCartButton>
                 {isDisableAddToCart && (
@@ -943,15 +961,24 @@ export function ProductForm({
                         ※ 選択されていない項目があります
                       </p>
                     )}
-                    {cartTotalQuantity >= 1 && (
+                    {/* {cartTotalQuantity >= 1 && (
                       <p className="mt-2 text-sm text-center text-red-500">
                         ※ カートに商品が入っているため追加できません
                       </p>
-                    )}
+                    )} */}
                   </>
                 )}
               </div>
             )}
+          </div>
+        )}
+        {!isOutOfStock && (
+          <div className="">
+            <ShopPayButton
+              width="100%"
+              variantIds={[selectedVariant?.id!]}
+              storeDomain={storeDomain}
+            />
           </div>
         )}
       </div>
@@ -969,8 +996,8 @@ function ProductDetail({
   learnMore?: string;
 }) {
   return (
-    <div key={title} className="grid w-full gap-2">
-      <div className="text-left">
+    <div key={title} className="grid gap-2 w-full">
+      <div className="text-left sr-only">
         <div className="flex justify-between">
           <Text size="lead" as="h4">
             {title}
@@ -978,9 +1005,9 @@ function ProductDetail({
         </div>
       </div>
 
-      <div className={'pb-4 pt-2 grid gap-2'}>
+      <div className={'grid gap-2 pt-2 pb-4'}>
         <div
-          className="prose dark:prose-invert"
+          className="text-sm prose dark:prose-invert"
           dangerouslySetInnerHTML={{__html: content}}
         />
         {learnMore && (
@@ -1008,7 +1035,7 @@ function ProductDetailDisclosure({
   learnMore?: string;
 }) {
   return (
-    <Disclosure key={title} as="div" className="grid w-full gap-2">
+    <Disclosure key={title} as="div" className="grid gap-2 w-full">
       {({open}) => (
         <>
           <Disclosure.Button className="text-left">
@@ -1019,13 +1046,13 @@ function ProductDetailDisclosure({
               <IconClose
                 className={clsx(
                   'transition-transform transform-gpu duration-200',
-                  !open && 'rotate-[45deg]',
+                  !open && 'rotate-45',
                 )}
               />
             </div>
           </Disclosure.Button>
 
-          <Disclosure.Panel className={'pb-4 pt-2 grid gap-2'}>
+          <Disclosure.Panel className={'grid gap-2 pt-2 pb-4'}>
             <div
               className="prose dark:prose-invert"
               dangerouslySetInnerHTML={{__html: content}}
@@ -1059,14 +1086,14 @@ function BeltOptionModal({
   selectBeltHandle: (e: ChangeEvent<HTMLInputElement>) => void;
 }) {
   return ReactDOM.createPortal(
-    <div className="fixed inset-0 z-50 flex items-center justify-center overflow-hidden">
+    <div className="flex overflow-hidden fixed inset-0 z-50 justify-center items-center">
       {/* 背景 */}
       <div className="fixed inset-0 transition-opacity">
         <div className="absolute inset-0 bg-gray-500 opacity-75"></div>
       </div>
 
       <div className="text-left transition-all transform bg-white rounded-lg shadow-xl sm:max-w-2xl sm:w-full w-[calc(100%-0.625rem)] sm:h-auto max-h-[80vh] ">
-        <p className="fixed top-0 w-full p-6 text-lg font-medium leading-6 text-gray-900 bg-white">
+        <p className="fixed top-0 p-6 w-full text-lg font-medium leading-6 text-gray-900 bg-white">
           帯選択
         </p>
         <div className="bg-white px-6 py-20 max-h-[80vh] overflow-hidden overflow-y-scroll">
@@ -1082,12 +1109,12 @@ function BeltOptionModal({
                   key={belt.id}
                 >
                   <img src={belt.src} alt={belt.title} />
-                  <div className="flex items-center my-2 ml-1 text-sm gap-x-1">
+                  <div className="flex gap-x-1 items-center my-2 ml-1 text-sm">
                     <input
                       type="checkbox"
                       value={belt.id}
                       onChange={selectBeltHandle}
-                      className="block text-black bg-white border rounded group size-4 !ring-black "
+                      className="block text-black bg-white border rounded-sm group size-4 ring-black! "
                       disabled={!belt.availableForSale}
                       checked={selectedBelts.includes(belt.id)}
                     />
@@ -1098,7 +1125,7 @@ function BeltOptionModal({
             </div>
           </div>
         </div>
-        <div className="fixed bottom-0 w-full px-4 py-3 bg-gray-50 sm:px-6 sm:flex sm:flex-row-reverse">
+        <div className="fixed bottom-0 px-4 py-3 w-full bg-gray-50 sm:px-6 sm:flex sm:flex-row-reverse">
           <Button onClick={closeModalHandle}>決定</Button>
         </div>
       </div>

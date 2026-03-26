@@ -1,30 +1,40 @@
-import type {HomepageFeaturedProductsQuery} from 'storefrontapi.generated';
+import type {ComponentProps} from 'react';
+
+import type {ProductCardFragment} from 'storefrontapi.generated';
 import {Section} from '~/components/Text';
 import {ProductCard} from '~/components/ProductCard';
 
-const mockProducts = {
-  nodes: new Array(12).fill(''),
+export type ProductSwimlaneProducts = {
+  nodes: ProductCardFragment[];
 };
 
-type ProductSwimlaneProps = HomepageFeaturedProductsQuery & {
+type ProductSwimlaneProps = {
   title?: string;
   count?: number;
-};
+  products?: ProductSwimlaneProducts;
+} & Omit<ComponentProps<typeof Section>, 'heading' | 'children'>;
 
 export function ProductSwimlane({
   title = 'おすすめ商品',
-  products = mockProducts,
+  products,
   count = 12,
   ...props
 }: ProductSwimlaneProps) {
+  const nodes = products?.nodes ?? [];
+  const visible = nodes.slice(0, count);
+
+  if (visible.length === 0) {
+    return null;
+  }
+
   return (
     <Section heading={title} padding="y" {...props}>
-      <div className="swimlane hiddenScroll md:pb-8 md:scroll-px-8 lg:scroll-px-12 md:px-8 lg:px-12">
-        {products.nodes.map((product) => (
+      <div className="swimlane hiddenScroll md:pb-8 md:scroll-px-8 lg:scroll-px-12 md:px-0 lg:px-0">
+        {visible.map((product) => (
           <ProductCard
             product={product}
             key={product.id}
-            className="snap-start w-80"
+            className="w-48 snap-start"
           />
         ))}
       </div>

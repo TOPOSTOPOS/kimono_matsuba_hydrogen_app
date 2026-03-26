@@ -2,6 +2,7 @@ import {useParams, Form, Await, useRouteLoaderData} from '@remix-run/react';
 import useWindowScroll from 'react-use/esm/useWindowScroll';
 import {Suspense, useEffect, useMemo} from 'react';
 import {CartForm} from '@shopify/hydrogen';
+import type {SerializeFrom} from '@remix-run/server-runtime';
 
 import {Text, Heading} from '~/components/Text';
 import {Link} from '~/components/Link';
@@ -20,10 +21,24 @@ import {type EnhancedMenu, useIsHomePath} from '~/lib/utils';
 import {useIsHydrated} from '~/hooks/useIsHydrated';
 import {useCartFetchers} from '~/hooks/useCartFetchers';
 import type {RootLoader} from '~/root';
+import {
+  CollectionNavStacked,
+  Nav,
+  hasGroupedCollectionNav,
+} from '~/components/Nav';
 
 import {Icons} from './elements/Icons';
+import {Button} from './Button';
 
-export function Header({title, menu}: {title: string; menu?: EnhancedMenu}) {
+export function Header({
+  title,
+  menu,
+  collectionNav,
+}: {
+  title: string;
+  menu?: EnhancedMenu;
+  collectionNav?: SerializeFrom<RootLoader>['layout']['collectionNav'];
+}) {
   const isHome = useIsHomePath();
 
   const {
@@ -50,12 +65,18 @@ export function Header({title, menu}: {title: string; menu?: EnhancedMenu}) {
     <>
       <CartDrawer isOpen={isCartOpen} onClose={closeCart} />
       {menu && (
-        <MenuDrawer isOpen={isMenuOpen} onClose={closeMenu} menu={menu} />
+        <MenuDrawer
+          isOpen={isMenuOpen}
+          onClose={closeMenu}
+          menu={menu}
+          collectionNav={collectionNav}
+        />
       )}
       <DesktopHeader
         isHome={isHome}
         title={title}
         menu={menu}
+        collectionNav={collectionNav}
         openCart={openCart}
       />
       <MobileHeader
@@ -89,15 +110,21 @@ export function MenuDrawer({
   isOpen,
   onClose,
   menu,
+  collectionNav,
 }: {
   isOpen: boolean;
   onClose: () => void;
   menu: EnhancedMenu;
+  collectionNav?: SerializeFrom<RootLoader>['layout']['collectionNav'];
 }) {
   return (
     <Drawer open={isOpen} onClose={onClose} openFrom="left" heading="Menu">
       <div className="grid">
-        <MenuMobileNav menu={menu} onClose={onClose} />
+        <MenuMobileNav
+          menu={menu}
+          onClose={onClose}
+          collectionNav={collectionNav}
+        />
       </div>
     </Drawer>
   );
@@ -106,12 +133,19 @@ export function MenuDrawer({
 function MenuMobileNav({
   menu,
   onClose,
+  collectionNav,
 }: {
   menu: EnhancedMenu;
   onClose: () => void;
+  collectionNav?: SerializeFrom<RootLoader>['layout']['collectionNav'];
 }) {
   return (
-    <nav className="grid gap-4 p-6 sm:gap-6 sm:px-12 sm:py-8">
+    <nav className="grid gap-4 px-6 py-4 sm:gap-6 sm:px-8 sm:py-4">
+      {hasGroupedCollectionNav(collectionNav) && (
+        <div className="pb-2 border-b border-[#E0E0E0]">
+          <CollectionNavStacked collectionNav={collectionNav} />
+        </div>
+      )}
       {/* Top level menu items */}
       {(menu?.items || []).map((item) => (
         <span key={item.id} className="block">
@@ -123,12 +157,30 @@ function MenuMobileNav({
               isActive ? 'pb-1 border-b -mb-px' : 'pb-1'
             }
           >
-            <Text as="span" size="copy">
-              {item.title}
+            <Text
+              as="span"
+              size="copy"
+              className="flex justify-between items-center text-sm border-b border-[#E0E0E0] pb-4"
+            >
+              <span className="text-sm">{item.title}</span>
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                viewBox="0 0 14 32"
+                width="24"
+                height="24"
+                role="img"
+                aria-hidden="true"
+                className="w-4 h-4"
+              >
+                <path d="M1.867 28.533a1.867 1.867 0 0 1-1.32-3.187l9.346-9.347L.547 6.652a1.867 1.867 0 0 1 2.64-2.64l10.667 10.667a1.867 1.867 0 0 1 0 2.64L3.187 27.986a1.86 1.86 0 0 1-1.32.547z"></path>
+              </svg>
             </Text>
           </Link>
         </span>
       ))}
+      <Button to="https://hon-matsuba.co.jp/" variant="primary" target="_blank">
+        来店予約
+      </Button>
     </nav>
   );
 }
@@ -153,25 +205,25 @@ function MobileHeader({
       role="banner"
       className={`${
         isHome
-          ? 'bg-primary/80 dark:bg-contrast/60 text-contrast dark:text-primary shadow-darkHeader'
-          : 'bg-contrast/80 text-primary'
+          ? 'text-black bg-white dark:text-primary shadow-darkHeader'
+          : 'text-primary'
       } flex lg:hidden items-center sticky backdrop-blur-lg z-40 top-0 justify-between w-full leading-none gap-4 px-4 md:px-8`}
     >
-      <div className="flex items-center justify-start w-full gap-2">
+      <div className="flex gap-2 justify-start items-center w-full">
         <button
           onClick={openMenu}
-          className="relative flex items-center justify-center w-8 h-8"
+          className="flex relative justify-center items-center w-8 h-8"
         >
           <IconMenu />
         </button>
         <Form
           method="get"
           action={params.locale ? `/${params.locale}/search` : '/search'}
-          className="items-center gap-2 sm:flex"
+          className="gap-2 items-center sm:flex"
         >
           <button
             type="submit"
-            className="relative flex items-center justify-center w-8 h-8"
+            className="flex relative justify-center items-center w-8 h-8"
           >
             <IconSearch />
           </button>
@@ -190,7 +242,7 @@ function MobileHeader({
       </div>
 
       <Link
-        className="flex items-center self-stretch leading-[3rem] md:leading-[4rem] justify-center flex-grow w-full h-full py-4"
+        className="flex justify-center items-center self-stretch py-4 w-full h-full leading-12 md:leading-16 grow"
         to="/"
       >
         <Heading
@@ -204,8 +256,8 @@ function MobileHeader({
         </Heading>
       </Link>
 
-      <div className="flex items-center justify-end w-full gap-2">
-        <AccountLink className="relative flex items-center justify-center w-8 h-8" />
+      <div className="flex gap-2 justify-end items-center w-full">
+        <AccountLink className="flex relative justify-center items-center w-8 h-8" />
         <CartCount isHome={isHome} openCart={openCart} />
       </div>
     </header>
@@ -215,89 +267,99 @@ function MobileHeader({
 function DesktopHeader({
   isHome,
   menu,
+  collectionNav,
   openCart,
   title,
 }: {
   isHome: boolean;
   openCart: () => void;
   menu?: EnhancedMenu;
+  collectionNav?: SerializeFrom<RootLoader>['layout']['collectionNav'];
   title: string;
 }) {
   const params = useParams();
   const {y} = useWindowScroll();
   return (
-    <header
-      role="banner"
-      className={`${
-        isHome
-          ? 'bg-primary/80 dark:bg-contrast/60 text-contrast dark:text-primary shadow-darkHeader'
-          : 'bg-contrast/80 text-primary'
-      } ${
-        !isHome && y > 50 && ' shadow-lightHeader'
-      } hidden lg:flex lg:flex-col items-center sticky transition duration-300 backdrop-blur-lg z-40 top-0 justify-between w-full leading-none gap-4 px-12 py-8`}
-    >
-      <div className="flex justify-between w-full">
-        <h1
-          className={`${
-            isHome ? 'text-white' : 'text-black'
-          } text-[.75rem] sml:hidden`}
-        >
-          着物レンタルモールhataori(ハタオリ)
-        </h1>
-        <div className="absolute -translate-x-1/2 left-1/2">
-          <Link className="font-bold" to="/" prefetch="intent">
-            <Icons.Logo
-              className="w-[150px] h-6 flex-1 sml:h-3 sml:w-auto sml:flex-none"
-              fill={isHome ? 'white' : 'black'}
-            />
-          </Link>
-        </div>
+    <>
+      <header
+        role="banner"
+        className={`bg-white shadow-sm ${
+          isHome ? 'text-black dark:text-primary' : 'text-primary'
+        } ${
+          !isHome && y > 50 && ' shadow-lightHeader'
+        } hidden lg:flex lg:flex-col items-end sticky transition duration-300 backdrop-blur-lg z-40 top-0 justify-between w-full leading-none gap-4 py-4 `}
+      >
+        <div className="flex justify-between items-center w-full max-w-[980px] mx-auto">
+          <h1
+            className={`${
+              isHome ? 'text-black' : 'text-black'
+            } text-[.75rem] sr-only`}
+          >
+            着物レンタルモールhataori(ハタオリ)
+          </h1>
+          <div className="">
+            <Link className="font-bold" to="/" prefetch="intent">
+              <Icons.Logo
+                className="w-[160px] h-8 flex-1 sml:h-5 sml:w-auto sml:flex-none"
+                fill={isHome ? 'black' : 'black'}
+              />
+            </Link>
+          </div>
 
-        <div className="flex items-center gap-1">
-          <Form
-            method="get"
-            action={params.locale ? `/${params.locale}/search` : '/search'}
-            className="flex items-center gap-2"
-          >
-            <Input
-              className={
-                isHome
-                  ? 'focus:border-contrast/20 dark:focus:border-primary/20'
-                  : 'focus:border-primary/20'
-              }
-              type="search"
-              variant="minisearch"
-              placeholder="検索"
-              name="q"
-            />
-            <button
-              type="submit"
-              className="relative flex items-center justify-center w-8 h-8 focus:ring-primary/5"
+          <div className="flex gap-1 items-center">
+            <Form
+              method="get"
+              action={params.locale ? `/${params.locale}/search` : '/search'}
+              className="flex gap-2 items-center"
             >
-              <IconSearch />
-            </button>
-          </Form>
-          <AccountLink className="relative flex items-center justify-center w-8 h-8 focus:ring-primary/5" />
-          <CartCount isHome={isHome} openCart={openCart} />
+              <Input
+                className={
+                  isHome
+                    ? 'focus:border-contrast/20 dark:focus:border-primary/20'
+                    : 'focus:border-primary/20'
+                }
+                type="search"
+                variant="minisearch"
+                placeholder="検索"
+                name="q"
+              />
+              <button
+                type="submit"
+                className="flex relative justify-center items-center w-8 h-8 focus:ring-primary/5"
+              >
+                <IconSearch />
+              </button>
+            </Form>
+            <AccountLink className="flex relative justify-center items-center w-8 h-8 focus:ring-primary/5" />
+            <CartCount isHome={isHome} openCart={openCart} />
+          </div>
         </div>
-      </div>
-      <nav className="flex gap-8">
-        {/* Top level menu items */}
-        {(menu?.items || []).map((item) => (
-          <Link
-            key={item.id}
-            to={item.to}
-            target={item.target}
-            prefetch="intent"
-            className={({isActive}) =>
-              isActive ? 'pb-1 border-b -mb-px' : 'pb-1'
-            }
+      </header>
+      {isHome && (
+        <nav className="justify-end items-center hidden gap-8 w-full lg:max-w-[980px] mx-auto text-sm py-5 sm:flex ">
+          {(menu?.items || []).map((item) => (
+            <Link
+              key={item.id}
+              to={item.to}
+              target={item.target}
+              prefetch="intent"
+              className={({isActive}) =>
+                isActive ? 'pb-1 border-b -mb-px' : 'pb-1'
+              }
+            >
+              {item.title}
+            </Link>
+          ))}
+          <Button
+            to="https://hon-matsuba.co.jp/"
+            variant="primary"
+            target="_blank"
           >
-            {item.title}
-          </Link>
-        ))}
-      </nav>
-    </header>
+            来店予約
+          </Button>
+        </nav>
+      )}
+    </>
   );
 }
 
@@ -361,7 +423,7 @@ function Badge({
             dark
               ? 'text-primary bg-contrast dark:text-contrast dark:bg-primary'
               : 'text-contrast bg-primary'
-          } absolute bottom-1 right-1 text-[0.625rem] font-medium subpixel-antialiased h-3 min-w-[0.75rem] flex items-center justify-center leading-none text-center rounded-full w-auto px-[0.125rem] pb-px`}
+          } absolute bottom-1 right-1 text-[0.625rem] font-medium subpixel-antialiased h-3 min-w-3 flex items-center justify-center leading-none text-center rounded-full w-auto px-0.5 pb-px`}
         >
           <span>{count || 0}</span>
         </div>
@@ -373,14 +435,14 @@ function Badge({
   return isHydrated ? (
     <button
       onClick={openCart}
-      className="relative flex items-center justify-center w-8 h-8 focus:ring-primary/5"
+      className="flex relative justify-center items-center w-8 h-8 focus:ring-primary/5"
     >
       {BadgeCounter}
     </button>
   ) : (
     <Link
       to="/cart"
-      className="relative flex items-center justify-center w-8 h-8 focus:ring-primary/5"
+      className="flex relative justify-center items-center w-8 h-8 focus:ring-primary/5"
     >
       {BadgeCounter}
     </Link>

@@ -45,6 +45,8 @@ export function ProductCard({
     cardLabel = 'New';
   }
 
+  const collectionTitle = product.metafield?.reference?.title;
+
   return (
     <div className="flex flex-col gap-2">
       <Link
@@ -53,7 +55,7 @@ export function ProductCard({
         prefetch="viewport"
       >
         <div className={clsx('grid gap-4', className)}>
-          <div className="card-image aspect-[4/5] bg-primary/5">
+          <div className="card-image aspect-4/5 bg-primary/5">
             {image && (
               <Image
                 className="object-cover w-full fadeIn"
@@ -74,13 +76,22 @@ export function ProductCard({
           </div>
           <div className="grid gap-1">
             <Text
-              className="w-full overflow-hidden whitespace-nowrap text-ellipsis "
+              className="overflow-hidden w-full text-sm font-medium whitespace-nowrap text-ellipsis"
               as="h3"
             >
               {product.title}
             </Text>
+
+            {collectionTitle && (
+              <Text
+                className="overflow-hidden w-full text-xs whitespace-nowrap text-ellipsis"
+                as="h4"
+              >
+                {collectionTitle}
+              </Text>
+            )}
             <div className="flex gap-4">
-              <Text className="flex gap-4">
+              <Text className="flex gap-4 font-bold">
                 <Money withoutTrailingZeros data={price!} />
                 {isDiscounted(price as MoneyV2, compareAtPrice as MoneyV2) && (
                   <CompareAtPrice
@@ -104,14 +115,14 @@ export function ProductCard({
           variant="secondary"
           className="mt-2"
         >
-          <Text as="span" className="flex items-center justify-center gap-2">
+          <Text as="span" className="flex gap-2 justify-center items-center">
             Add to Cart
           </Text>
         </AddToCartButton>
       )}
       {quickAdd && !firstVariant.availableForSale && (
         <Button variant="secondary" className="mt-2" disabled>
-          <Text as="span" className="flex items-center justify-center gap-2">
+          <Text as="span" className="flex gap-2 justify-center items-center">
             Sold out
           </Text>
         </Button>

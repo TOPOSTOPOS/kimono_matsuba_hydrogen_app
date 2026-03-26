@@ -6,6 +6,7 @@ import type {
   ProductSortKeys,
 } from '@shopify/hydrogen/storefront-api-types';
 
+import type {ProductCardFragment} from 'storefrontapi.generated';
 import {Heading, Text} from '~/components/Text';
 import {ProductCard} from '~/components/ProductCard';
 import {Skeleton} from '~/components/Skeleton';
@@ -97,7 +98,7 @@ function FeatureProductsContent({
       <>
         {[...new Array(count)].map((_, i) => (
           <div key={`${id + i}`} className="grid gap-2">
-            <Skeleton className="aspect-[3/4]" />
+            <Skeleton className="aspect-3/4" />
             <Skeleton className="w-32 h-4" />
           </div>
         ))}
@@ -113,7 +114,7 @@ function FeatureProductsContent({
     <>
       {products.map((product) => (
         <ProductCard
-          product={product}
+          product={product as ProductCardFragment}
           key={product.id}
           onClick={onClick}
           quickAdd

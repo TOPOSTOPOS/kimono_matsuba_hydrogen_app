@@ -102,7 +102,7 @@ function CollectionCard({
       to={`/collections/${collection.handle}`}
       className="grid gap-4"
     >
-      <div className="card-image bg-primary/5 aspect-[3/2]">
+      <div className="card-image bg-primary/5 aspect-3/2">
         {collection?.image && (
           <Image
             data={collection.image}

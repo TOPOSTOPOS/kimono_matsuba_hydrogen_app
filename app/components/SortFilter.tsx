@@ -46,23 +46,23 @@ export function SortFilter({
   const [isOpen, setIsOpen] = useState(false);
   return (
     <>
-      <div className="flex items-center justify-between w-full">
+      <div className="flex justify-between items-center w-full">
         <button
           onClick={() => setIsOpen(!isOpen)}
           className={
-            'relative flex items-center justify-center w-8 h-8 focus:ring-primary/5'
+            'flex relative justify-center items-center w-8 h-8 focus:ring-primary/5'
           }
         >
           <IconFilters />
         </button>
         <SortMenu />
       </div>
-      <div className="flex flex-col flex-wrap md:flex-row">
+      <div className="flex flex-col">
         <div
           className={`transition-all duration-200 ${
             isOpen
-              ? 'opacity-100 min-w-full md:min-w-[240px] md:w-[240px] md:pr-8 max-h-full'
-              : 'opacity-0 md:min-w-[0px] md:w-[0px] pr-0 max-h-0 md:max-h-full'
+              ? 'w-full min-w-full max-h-full opacity-100'
+              : 'max-h-0 opacity-0 md:min-w-0 md:w-0'
           }`}
         >
           <FiltersDrawer filters={filters} appliedFilters={appliedFilters} />
@@ -96,7 +96,7 @@ export function FiltersDrawer({
         const to = getFilterLink(option.input as string, params, location);
         return (
           <Link
-            className="focus:underline hover:underline"
+            className="focus:underline hover:underline text-xs!"
             prefetch="intent"
             to={to}
           >
@@ -108,27 +108,35 @@ export function FiltersDrawer({
 
   return (
     <>
-      <nav className="py-8">
-        {appliedFilters.length > 0 ? (
-          <div className="pb-8">
-            <AppliedFilters filters={appliedFilters} />
-          </div>
-        ) : null}
-
-        <Heading as="h4" size="lead" className="pb-4">
+      {appliedFilters.length > 0 ? (
+        <div className="pb-8">
+          <AppliedFilters filters={appliedFilters} />
+        </div>
+      ) : null}
+      <nav className="flex flex-col gap-4 md:flex-row">
+        <Heading
+          as="h4"
+          size="lead"
+          className="max-w-none! text-xs! basis-[84px]! w-full flex-1"
+        >
           絞り込み条件
         </Heading>
-        <div className="divide-y">
+        <div className="flex divide-y md:flex-row basis-[calc(100%-84px)] gap-4">
           {filters.map((filter: Filter) => (
-            <Disclosure as="div" key={filter.id} className="w-full">
+            <Disclosure as="div" key={filter.id} className="border-none!">
               {({open}) => (
                 <>
-                  <Disclosure.Button className="flex justify-between w-full py-4">
-                    <Text size="lead">{filter.label}</Text>
+                  <Disclosure.Button className="flex gap-1 w-full">
+                    <Text size="lead" className="md:max-w-none! text-sm!">
+                      {filter.label}
+                    </Text>
                     <IconCaret direction={open ? 'up' : 'down'} />
                   </Disclosure.Button>
                   <Disclosure.Panel key={filter.id}>
-                    <ul key={filter.id} className="py-2">
+                    <ul
+                      key={filter.id}
+                      className="px-3 pt-3 bg-white shadow-sm"
+                    >
                       {filter.values?.map((option) => {
                         return (
                           <li key={option.id} className="pb-4">
@@ -153,7 +161,7 @@ function AppliedFilters({filters = []}: {filters: AppliedFilter[]}) {
   const location = useLocation();
   return (
     <>
-      <Heading as="h4" size="lead" className="pb-4">
+      <Heading as="h4" size="lead" className="pb-4 text-xs!">
         絞り込みワード
       </Heading>
       <div className="flex flex-wrap gap-2">
@@ -161,12 +169,12 @@ function AppliedFilters({filters = []}: {filters: AppliedFilter[]}) {
           return (
             <Link
               to={getAppliedFilterLink(filter, params, location)}
-              className="flex px-2 border rounded-full gap"
+              className="flex py-2 px-4 rounded-full border gap text-xs!"
               key={`${filter.label}-${JSON.stringify(filter.filter)}`}
             >
-              <span className="flex-grow">{filter.label}</span>
-              <span>
-                <IconXMark />
+              <span className="grow">{filter.label}</span>
+              <span className="pl-3">
+                <IconXMark className="w-3! h-3!" />
               </span>
             </Link>
           );
@@ -257,28 +265,30 @@ function PriceRangeFilter({max, min}: {max?: number; min?: number}) {
   };
 
   return (
-    <div className="flex flex-col">
-      <label className="mb-4">
-        <span>from</span>
+    <div className="flex flex-col md:flex-row">
+      <label className="">
+        <span className=" text-sm!">¥</span>
         <input
           name="minPrice"
-          className="text-black"
+          className="text-black text-sm! ml-2"
           type="number"
           value={minPrice ?? ''}
-          placeholder={'$'}
+          placeholder={'¥'}
           onChange={onChangeMin}
         />
+        <span className="ml-2 text-xs!">円 〜</span>
       </label>
-      <label>
-        <span>to</span>
+      <label className="ml-2">
+        <span className=" text-sm!">¥</span>
         <input
           name="maxPrice"
-          className="text-black"
+          className="text-black text-sm! ml-2"
           type="number"
           value={maxPrice ?? ''}
-          placeholder={'$'}
+          placeholder={'¥'}
           onChange={onChangeMax}
         />
+        <span className="ml-2 text-xs!">円</span>
       </label>
     </div>
   );
@@ -310,23 +320,11 @@ function filterInputToParams(
 
 export default function SortMenu() {
   const items: {label: string; key: SortParam}[] = [
-    {label: 'Featured', key: 'featured'},
-    {
-      label: 'Price: Low - High',
-      key: 'price-low-high',
-    },
-    {
-      label: 'Price: High - Low',
-      key: 'price-high-low',
-    },
-    {
-      label: 'Best Selling',
-      key: 'best-selling',
-    },
-    {
-      label: 'Newest',
-      key: 'newest',
-    },
+    {label: 'おすすめ', key: 'featured'},
+    {label: '価格の安い順', key: 'price-low-high'},
+    {label: '価格の高い順', key: 'price-high-low'},
+    {label: '売れ筋順', key: 'best-selling'},
+    {label: '新着順', key: 'newest'},
   ];
   const [params] = useSearchParams();
   const location = useLocation();
@@ -336,21 +334,21 @@ export default function SortMenu() {
     <Menu as="div" className="relative z-40">
       <Menu.Button className="flex items-center">
         <span className="px-2">
-          <span className="px-2 font-medium">並び順：</span>
-          <span>{(activeItem || items[0]).label}</span>
+          <span className="px-2 text-xs font-medium">並び順：</span>
+          <span className="text-xs">{(activeItem || items[0]).label}</span>
         </span>
         <IconCaret />
       </Menu.Button>
 
       <Menu.Items
         as="nav"
-        className="absolute right-0 flex flex-col p-4 text-right rounded-sm bg-contrast"
+        className="flex absolute right-0 flex-col p-4 text-right rounded-xs bg-contrast"
       >
         {items.map((item) => (
           <Menu.Item key={item.label}>
             {() => (
               <Link
-                className={`block text-sm pb-2 px-3 ${
+                className={`block text-xs pb-2 px-3 ${
                   activeItem?.key === item.key ? 'font-bold' : 'font-normal'
                 }`}
                 to={getSortLink(item.key, params, location)}

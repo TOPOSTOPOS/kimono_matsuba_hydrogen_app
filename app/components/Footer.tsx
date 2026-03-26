@@ -1,6 +1,7 @@
 import {Disclosure} from '@headlessui/react';
 import {Suspense} from 'react';
 import {SocialIcon} from 'react-social-icons';
+import type {SerializeFrom} from '@remix-run/server-runtime';
 
 import {Heading, Section} from '~/components/Text';
 import {Link} from '~/components/Link';
@@ -11,8 +12,18 @@ import {
   type ChildEnhancedMenuItem,
   useIsHomePath,
 } from '~/lib/utils';
+import type {RootLoader} from '~/root';
 
-export function Footer({menu}: {menu?: EnhancedMenu}) {
+import {Icons} from './elements/Icons';
+import {Nav} from './Nav';
+
+export function Footer({
+  menu,
+  collectionNav,
+}: {
+  menu?: EnhancedMenu;
+  collectionNav?: SerializeFrom<RootLoader>['layout']['collectionNav'];
+}) {
   const isHome = useIsHomePath();
   const itemsCount = menu
     ? menu?.items?.length + 1 > 4
@@ -25,23 +36,26 @@ export function Footer({menu}: {menu?: EnhancedMenu}) {
       divider={isHome ? 'none' : 'top'}
       as="footer"
       role="contentinfo"
-      className={`grid min-h-[25rem] items-start grid-flow-row w-full gap-6 py-8 px-6 md:px-8 lg:px-12 md:gap-8 lg:gap-12 grid-cols-1 md:grid-cols-2 lg:grid-cols-${itemsCount}
-        bg-white dark:bg-contrast dark:text-primary text-contrast overflow-hidden`}
+      display="flex"
+      className={`overflow-hidden gap-6 justify-between items-start px-6! py-8! pt-10! mx-auto mt-9 w-full bg-white pb-15! min-h-100 md:px-0! lg:px-12! md:gap-8 lg:gap-12 md:grid-cols-2 lg:grid-cols-${itemsCount} dark:bg-contrast dark:text-primary text-contrast`}
     >
-      <FooterMenu menu={menu} />
-      <div className="hidden">
-        <CountrySelector />
-      </div>
+      <div className="flex flex-col gap-6 mx-auto w-full max-w-245">
+        <Nav collectionNav={collectionNav} isFooter={true} />
+        <FooterMenu menu={menu} />
+        <div className="hidden">
+          <CountrySelector />
+        </div>
 
-      <FooterSns />
+        <FooterSns />
 
-      <div
-        className={`w-full text-primary flex justify-between self-end pt-8 opacity-50 md:col-span-4 lg:col-span-${itemsCount}`}
-      >
-        {/* <p>aaa</p> */}
-        <p className="text-primary">
-          &copy; {new Date().getFullYear()} TRENT Inc.
-        </p>
+        <div
+          className={`flex justify-between self-end pt-8 w-full text-primary md:col-span-4 lg:col-span-${itemsCount}`}
+        >
+          {/* <p>aaa</p> */}
+          <p className="">
+            <Icons.Logo className="w-[148px] h-auto" fill="black" />
+          </p>
+        </div>
       </div>
     </Section>
   );
@@ -118,13 +132,11 @@ function FooterSns() {
       id: 'snsItem1',
       icon: (
         <SocialIcon
-          url="https://www.instagram.com/"
-          network="instagram"
-          bgColor="#232323"
+          url="https://www.instagram.com/hon_kimono_matsuba/"
           target="_blank"
           style={{
-            width: '1.5rem',
-            height: '1.5rem',
+            width: '2rem',
+            height: '2rem',
           }}
         />
       ),
@@ -134,61 +146,11 @@ function FooterSns() {
       id: 'snsItem2',
       icon: (
         <SocialIcon
-          url="https://x.com/"
-          network="x"
-          bgColor="#232323"
+          url="https://page.line.me/fhb5695w?oat_referrer=PROFILE&openQrModal=true"
           target="_blank"
           style={{
-            width: '1.5rem',
-            height: '1.5rem',
-          }}
-        />
-      ),
-      path: '/',
-    },
-    {
-      id: 'snsItem3',
-      icon: (
-        <SocialIcon
-          url="https://www.tiktok.com/"
-          network="tiktok"
-          bgColor="#232323"
-          target="_blank"
-          style={{
-            width: '1.5rem',
-            height: '1.5rem',
-          }}
-        />
-      ),
-      path: '/',
-    },
-    {
-      id: 'snsItem4',
-      icon: (
-        <SocialIcon
-          url="https://www.youtube.com/"
-          network="youtube"
-          bgColor="#232323"
-          target="_blank"
-          style={{
-            width: '1.5rem',
-            height: '1.5rem',
-          }}
-        />
-      ),
-      path: '/',
-    },
-    {
-      id: 'snsItem5',
-      icon: (
-        <SocialIcon
-          url="https://www.facebook.com/"
-          network="facebook"
-          bgColor="#232323"
-          target="_blank"
-          style={{
-            width: '1.5rem',
-            height: '1.5rem',
+            width: '2rem',
+            height: '2rem',
           }}
         />
       ),
@@ -196,11 +158,11 @@ function FooterSns() {
     },
   ];
   return (
-    <section className="grid w-full gap-4 text-primary">
-      <h3 className="font-bold whitespace-pre-wrap cursor-default max-w-prose text-lead">
+    <section className="grid gap-4 w-full text-primary">
+      <h3 className="max-w-prose font-bold whitespace-pre-wrap cursor-default text-lead">
         SNS
       </h3>
-      <div className="flex gap-2 overflow-hidden transition-all duration-300 max-h-0 md:max-h-fit">
+      <div className="flex overflow-hidden gap-2 max-h-0 transition-all duration-300 md:max-h-fit">
         {snsMenu.length &&
           snsMenu.map((snsItem) => {
             return <div key={snsItem.id}>{snsItem.icon}</div>;

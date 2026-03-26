@@ -1,19 +1,25 @@
-import {
-  defer,
-  type MetaArgs,
-  type LoaderFunctionArgs,
-} from '@shopify/remix-oxygen';
+import {defer} from '@shopify/remix-oxygen';
+import type {MetaArgs, LoaderFunctionArgs} from '@shopify/remix-oxygen';
 import {Suspense} from 'react';
-import {Await, useLoaderData} from '@remix-run/react';
+import {Await, useLoaderData, useRouteLoaderData} from '@remix-run/react';
 import {getSeoMeta} from '@shopify/hydrogen';
 
-import {Hero} from '~/components/Hero';
 import {FeaturedCollections} from '~/components/FeaturedCollections';
 import {ProductSwimlane} from '~/components/ProductSwimlane';
+import {RecentlyViewedSwimlane} from '~/components/RecentlyViewedSwimlane';
 import {MEDIA_FRAGMENT, PRODUCT_CARD_FRAGMENT} from '~/data/fragments';
 import {getHeroPlaceholder} from '~/lib/placeholders';
 import {seoPayload} from '~/lib/seo.server';
 import {routeHeaders} from '~/data/cache';
+import {HeroSlider} from '~/components/HeroSlider';
+import {CollectionTopSellingModule} from '~/components/CollectionTopSellingModule';
+import {Nav} from '~/components/Nav';
+import type {RootLoader} from '~/root';
+
+/** トップに売れ筋ブロックを出すコレクションハンドル（空なら非表示） */
+export const HOMEPAGE_COLLECTION_TOP_SELLING_HANDLE = 'all';
+
+export const HOMEPAGE_COLLECTION_HOUMONGI_HANDLE = 'houmongi';
 
 export const headers = routeHeaders;
 
@@ -65,7 +71,6 @@ async function loadCriticalData({context}: LoaderFunctionArgs) {
  */
 function loadDeferredData({context}: LoaderFunctionArgs) {
   const {language, country} = context.storefront.i18n;
-
   const featuredProducts = context.storefront
     .query(HOMEPAGE_FEATURED_PRODUCTS_QUERY, {
       variables: {
@@ -74,21 +79,6 @@ function loadDeferredData({context}: LoaderFunctionArgs) {
          * into all queries. Passing them is unnecessary unless you
          * want to override them from the following default:
          */
-        country,
-        language,
-      },
-    })
-    .catch((error) => {
-      // Log query errors, but don't throw them so the page can still render
-      // eslint-disable-next-line no-console
-      console.error(error);
-      return null;
-    });
-
-  const secondaryHero = context.storefront
-    .query(COLLECTION_HERO_QUERY, {
-      variables: {
-        handle: 'furisode',
         country,
         language,
       },
@@ -114,10 +104,9 @@ function loadDeferredData({context}: LoaderFunctionArgs) {
       return null;
     });
 
-  const tertiaryHero = context.storefront
-    .query(COLLECTION_HERO_QUERY, {
+  const heros = context.storefront
+    .query(HOMEPAGE_HEROS_QUERY, {
       variables: {
-        handle: 'yukata',
         country,
         language,
       },
@@ -130,10 +119,9 @@ function loadDeferredData({context}: LoaderFunctionArgs) {
     });
 
   return {
+    heros,
     featuredProducts,
-    secondaryHero,
     featuredCollections,
-    tertiaryHero,
   };
 }
 
@@ -142,39 +130,29 @@ export const meta = ({matches}: MetaArgs<typeof loader>) => {
 };
 
 export default function Homepage() {
-  const {
-    primaryHero,
-    secondaryHero,
-    tertiaryHero,
-    featuredCollections,
-    featuredProducts,
-  } = useLoaderData<typeof loader>();
+  const {heros, featuredCollections, featuredProducts} =
+    useLoaderData<typeof loader>();
+  const rootData = useRouteLoaderData<RootLoader>('root');
+  const collectionNav = rootData?.layout?.collectionNav;
 
   // TODO: skeletons vs placeholders
   const skeletons = getHeroPlaceholder([{}, {}, {}]);
 
   return (
     <>
-      {primaryHero && (
-        <Hero {...primaryHero} height="full" top loading="eager" />
-      )}
-
-      {featuredProducts && (
-        <Suspense>
-          <Await resolve={featuredProducts}>
+      {heros && (
+        <Suspense fallback={<div>Loading...</div>}>
+          <Await resolve={heros}>
             {(response) => {
-              if (
-                !response ||
-                !response?.products ||
-                !response?.products?.nodes
-              ) {
-                return <></>;
-              }
+              const heroNodes = (response?.collections?.nodes ?? []).filter(
+                (collection) => Boolean(collection?.spread?.reference),
+              );
               return (
-                <ProductSwimlane
-                  products={response.products}
-                  title="おすすめ商品"
-                  count={4}
+                <HeroSlider
+                  heros={heroNodes}
+                  height="full"
+                  top
+                  loading="eager"
                 />
               );
             }}
@@ -182,53 +160,72 @@ export default function Homepage() {
         </Suspense>
       )}
 
-      {secondaryHero && (
-        <Suspense fallback={<Hero {...skeletons[1]} />}>
-          <Await resolve={secondaryHero}>
-            {(response) => {
-              if (!response || !response?.hero) {
-                return <></>;
-              }
-              return <Hero {...response.hero} />;
-            }}
-          </Await>
-        </Suspense>
-      )}
+      <div className="flex justify-between mx-auto mt-9 w-full sm:pt-10 max-w-245 pb-15">
+        <div className="z-0 order-1 w-full max-w-187">
+          <RecentlyViewedSwimlane />
+          {featuredProducts && (
+            <Suspense>
+              <Await resolve={featuredProducts}>
+                {(response) => {
+                  if (
+                    !response ||
+                    !response?.products ||
+                    !response?.products?.nodes
+                  ) {
+                    return <></>;
+                  }
+                  return (
+                    <ProductSwimlane
+                      products={response.products}
+                      title="おすすめ商品"
+                      count={4}
+                    />
+                  );
+                }}
+              </Await>
+            </Suspense>
+          )}
 
-      {featuredCollections && (
-        <Suspense>
-          <Await resolve={featuredCollections}>
-            {(response) => {
-              if (
-                !response ||
-                !response?.collections ||
-                !response?.collections?.nodes
-              ) {
-                return <></>;
-              }
-              return (
-                <FeaturedCollections
-                  collections={response.collections}
-                  title="すべてのカテゴリ"
-                />
-              );
-            }}
-          </Await>
-        </Suspense>
-      )}
+          {HOMEPAGE_COLLECTION_TOP_SELLING_HANDLE ? (
+            <CollectionTopSellingModule
+              collectionHandle={HOMEPAGE_COLLECTION_TOP_SELLING_HANDLE}
+              count={10}
+            />
+          ) : null}
 
-      {tertiaryHero && (
-        <Suspense fallback={<Hero {...skeletons[2]} />}>
-          <Await resolve={tertiaryHero}>
-            {(response) => {
-              if (!response || !response?.hero) {
-                return <></>;
-              }
-              return <Hero {...response.hero} />;
-            }}
-          </Await>
-        </Suspense>
-      )}
+          {HOMEPAGE_COLLECTION_HOUMONGI_HANDLE ? (
+            <CollectionTopSellingModule
+              collectionHandle={HOMEPAGE_COLLECTION_HOUMONGI_HANDLE}
+              count={10}
+            />
+          ) : null}
+
+          {featuredCollections && (
+            <Suspense>
+              <Await resolve={featuredCollections}>
+                {(response) => {
+                  if (
+                    !response ||
+                    !response?.collections ||
+                    !response?.collections?.nodes
+                  ) {
+                    return <></>;
+                  }
+                  return (
+                    <FeaturedCollections
+                      collections={response.collections}
+                      title="すべてのカテゴリ"
+                    />
+                  );
+                }}
+              </Await>
+            </Suspense>
+          )}
+        </div>
+        <div className="hidden w-full max-w-48 sm:block">
+          <Nav collectionNav={collectionNav} />
+        </div>
+      </div>
     </>
   );
 }
@@ -276,11 +273,13 @@ const HOMEPAGE_SEO_QUERY = `#graphql
   ${COLLECTION_CONTENT_FRAGMENT}
 ` as const;
 
-const COLLECTION_HERO_QUERY = `#graphql
-  query heroCollectionContent($handle: String, $country: CountryCode, $language: LanguageCode)
+const HOMEPAGE_HEROS_QUERY = `#graphql
+  query homepageHeros($country: CountryCode, $language: LanguageCode)
   @inContext(country: $country, language: $language) {
-    hero: collection(handle: $handle) {
-      ...CollectionContent
+    collections(first: 8, sortKey: UPDATED_AT) {
+      nodes {
+        ...CollectionContent
+      }
     }
   }
   ${COLLECTION_CONTENT_FRAGMENT}
