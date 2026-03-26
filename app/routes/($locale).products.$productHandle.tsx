@@ -15,6 +15,7 @@ import {
   VariantSelector,
   getSelectedProductOptions,
   Analytics,
+  ShopPayButton,
 } from '@shopify/hydrogen';
 import invariant from 'tiny-invariant';
 import clsx from 'clsx';
@@ -315,18 +316,20 @@ export default function Product() {
           </div>
         </div>
       </Section>
-      <div className="mx-auto bg-white max-w-245">
-        <Suspense fallback={<Skeleton className="h-32" />}>
-          <Await
-            errorElement="There was a problem loading related products"
-            resolve={recommended}
-          >
-            {(products) => (
-              <ProductSwimlane title="おすすめ商品" products={products} />
-            )}
-          </Await>
-        </Suspense>
-        <RecentlyViewedSwimlane />
+      <div className="bg-[#fafaf9] mt-12 md:mt-20">
+        <Section padding="x" className="mx-auto max-w-245">
+          <Suspense fallback={<Skeleton className="h-32" />}>
+            <Await
+              errorElement="There was a problem loading related products"
+              resolve={recommended}
+            >
+              {(products) => (
+                <ProductSwimlane title="おすすめ商品" products={products} />
+              )}
+            </Await>
+          </Suspense>
+          <RecentlyViewedSwimlane />
+        </Section>
       </div>
       <Analytics.ProductView
         data={{
@@ -967,6 +970,15 @@ export function ProductForm({
                 )}
               </div>
             )}
+          </div>
+        )}
+        {!isOutOfStock && (
+          <div className="">
+            <ShopPayButton
+              width="100%"
+              variantIds={[selectedVariant?.id!]}
+              storeDomain={storeDomain}
+            />
           </div>
         )}
       </div>

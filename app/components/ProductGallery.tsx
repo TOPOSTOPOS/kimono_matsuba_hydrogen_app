@@ -89,7 +89,7 @@ export function ProductGallery({
 
   return (
     <div className={className}>
-      <div className="overflow-hidden relative w-full bg-white rounded-sm aspect-square card-image dark:bg-contrast/10">
+      <div className="overflow-hidden relative w-full bg-white rounded-none! aspect-square card-image dark:bg-contrast/10">
         {visual.kind === 'hydrogen' ? (
           <Image
             loading="eager"

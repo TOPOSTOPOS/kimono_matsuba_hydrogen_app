@@ -1,6 +1,7 @@
 import {useEffect, useMemo} from 'react';
 import {useFetcher} from '@remix-run/react';
 import type {SerializeFrom} from '@remix-run/server-runtime';
+import clsx from 'clsx';
 
 import type {LatestArticleSummary} from '~/routes/($locale).api.latest-articles';
 import {Text} from '~/components/Text';
@@ -50,8 +51,10 @@ type LatestArticlesResponse = {
 
 export function Nav({
   collectionNav,
+  isFooter = false,
 }: {
   collectionNav?: SerializeFrom<RootLoader>['layout']['collectionNav'];
+  isFooter?: boolean;
 }) {
   const {scene, type} = useMemo(
     () => groupCollectionNavNodes(collectionNav?.nodes ?? []),
@@ -91,25 +94,37 @@ export function Nav({
   }
 
   return (
-    <div className="flex flex-col gap-8 justify-end items-start w-full">
+    <div
+      className={clsx(
+        'flex flex-col gap-8 justify-end items-start w-full',
+        isFooter ? 'flex-row' : '',
+      )}
+    >
       {hasCollections && (
-        <div className="flex flex-col gap-8 justify-end items-start w-full">
+        <div
+          className={clsx(
+            'flex flex-col gap-8 justify-end items-start w-full',
+            isFooter ? 'flex-row' : '',
+          )}
+        >
           {scene.length > 0 && (
             <CollectionNavGroup
               title={COLLECTION_CATEGORY_METAFIELD_VALUE.SCENE}
               collections={scene}
+              isFooter={isFooter}
             />
           )}
           {type.length > 0 && (
             <CollectionNavGroup
               title={COLLECTION_CATEGORY_METAFIELD_VALUE.TYPE}
               collections={type}
+              isFooter={isFooter}
             />
           )}
         </div>
       )}
 
-      {(hasArticles || articlesLoading) && (
+      {!isFooter && (hasArticles || articlesLoading) && (
         <NavJournalBlock
           articles={articles}
           loading={articlesLoading && !hasArticles}
@@ -152,11 +167,11 @@ function NavJournalBlock({
       ) : (
         <ul className="flex flex-col gap-1 p-0 m-0 w-full list-none">
           {articles.map((article) => (
-            <li key={article.id} className="pb-3 border-b border-opacity-10">
+            <li key={article.id} className="pb-3">
               <Link
                 to={`/${BLOG_HANDLE}/${article.handle}`}
                 prefetch="intent"
-                className="text-xs line-clamp-2 hover:opacity-50"
+                className="text-xs line-clamp-2 hover:opacity-50 text-primary"
               >
                 {article.title}
               </Link>
@@ -167,7 +182,7 @@ function NavJournalBlock({
       <div className="flex justify-end items-end w-full">
         <Link
           to="/journal"
-          className="text-xs underline shrink-0 underline-offset-4"
+          className="text-xs underline shrink-0 underline-offset-4 text-primary"
           prefetch="intent"
         >
           一覧を見る
@@ -180,9 +195,11 @@ function NavJournalBlock({
 function CollectionNavGroup({
   title,
   collections,
+  isFooter = false,
 }: {
   title: string;
   collections: CollectionNavNode[];
+  isFooter?: boolean;
 }) {
   return (
     <div className="flex flex-col gap-5 w-full">
@@ -200,12 +217,12 @@ function CollectionNavGroup({
             to={`/collections/${item.handle}`}
             prefetch="intent"
             className={({isActive}) =>
-              isActive
+              isActive && !isFooter
                 ? '-mb-px w-full flex gap-2 items-center justify-between p-2 text-sm rounded-sm transition-colors duration-300 bg-primary/5'
                 : 'w-full flex gap-2 justify-between items-center p-2 text-sm rounded-sm transition-colors duration-300 hover:bg-primary/5'
             }
           >
-            <span className="">{item.title}</span>
+            <span className="text-primary">{item.title}</span>
           </Link>
         ))}
       </div>

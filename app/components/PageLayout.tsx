@@ -17,7 +17,7 @@ type LayoutProps = {
 };
 
 export function PageLayout({children, layout}: LayoutProps) {
-  const {headerMenu, footerMenu} = layout || {};
+  const {headerMenu, footerMenu, collectionNav} = layout || {};
   return (
     <>
       <div className="flex flex-col min-h-screen">
@@ -30,14 +30,14 @@ export function PageLayout({children, layout}: LayoutProps) {
           <Header
             title={layout.shop.name}
             menu={headerMenu}
-            collectionNav={layout.collectionNav}
+            collectionNav={collectionNav}
           />
         )}
         <main role="main" id="mainContent" className="grow">
           {children}
         </main>
       </div>
-      {footerMenu && <Footer menu={footerMenu} />}
+      {footerMenu && <Footer menu={footerMenu} collectionNav={collectionNav} />}
     </>
   );
 }

@@ -61,8 +61,8 @@ export function SortFilter({
         <div
           className={`transition-all duration-200 ${
             isOpen
-              ? 'min-w-full max-h-full opacity-100 md:min-w-[240px] md:w-[240px] md:pr-8'
-              : 'pr-0 max-h-0 opacity-0 md:min-w-0 md:w-0'
+              ? 'w-full min-w-full max-h-full opacity-100'
+              : 'max-h-0 opacity-0 md:min-w-0 md:w-0'
           }`}
         >
           <FiltersDrawer filters={filters} appliedFilters={appliedFilters} />
@@ -96,7 +96,7 @@ export function FiltersDrawer({
         const to = getFilterLink(option.input as string, params, location);
         return (
           <Link
-            className="focus:underline hover:underline"
+            className="focus:underline hover:underline text-xs!"
             prefetch="intent"
             to={to}
           >
@@ -108,27 +108,35 @@ export function FiltersDrawer({
 
   return (
     <>
-      <nav className="py-8">
-        {appliedFilters.length > 0 ? (
-          <div className="pb-8">
-            <AppliedFilters filters={appliedFilters} />
-          </div>
-        ) : null}
-
-        <Heading as="h4" size="lead" className="pb-4">
+      {appliedFilters.length > 0 ? (
+        <div className="pb-8">
+          <AppliedFilters filters={appliedFilters} />
+        </div>
+      ) : null}
+      <nav className="flex flex-col gap-4 md:flex-row">
+        <Heading
+          as="h4"
+          size="lead"
+          className="max-w-none! text-xs! basis-[84px]! w-full flex-1"
+        >
           絞り込み条件
         </Heading>
-        <div className="divide-y">
+        <div className="flex divide-y md:flex-row basis-[calc(100%-84px)] gap-4">
           {filters.map((filter: Filter) => (
-            <Disclosure as="div" key={filter.id} className="w-full">
+            <Disclosure as="div" key={filter.id} className="border-none!">
               {({open}) => (
                 <>
-                  <Disclosure.Button className="flex justify-between py-4 w-full">
-                    <Text size="lead">{filter.label}</Text>
+                  <Disclosure.Button className="flex gap-1 w-full">
+                    <Text size="lead" className="md:max-w-none! text-sm!">
+                      {filter.label}
+                    </Text>
                     <IconCaret direction={open ? 'up' : 'down'} />
                   </Disclosure.Button>
                   <Disclosure.Panel key={filter.id}>
-                    <ul key={filter.id} className="py-2">
+                    <ul
+                      key={filter.id}
+                      className="px-3 pt-3 bg-white shadow-sm"
+                    >
                       {filter.values?.map((option) => {
                         return (
                           <li key={option.id} className="pb-4">
@@ -153,7 +161,7 @@ function AppliedFilters({filters = []}: {filters: AppliedFilter[]}) {
   const location = useLocation();
   return (
     <>
-      <Heading as="h4" size="lead" className="pb-4">
+      <Heading as="h4" size="lead" className="pb-4 text-xs!">
         絞り込みワード
       </Heading>
       <div className="flex flex-wrap gap-2">
@@ -161,12 +169,12 @@ function AppliedFilters({filters = []}: {filters: AppliedFilter[]}) {
           return (
             <Link
               to={getAppliedFilterLink(filter, params, location)}
-              className="flex px-2 rounded-full border gap"
+              className="flex py-2 px-4 rounded-full border gap text-xs!"
               key={`${filter.label}-${JSON.stringify(filter.filter)}`}
             >
               <span className="grow">{filter.label}</span>
-              <span>
-                <IconXMark />
+              <span className="pl-3">
+                <IconXMark className="w-3! h-3!" />
               </span>
             </Link>
           );
@@ -257,28 +265,30 @@ function PriceRangeFilter({max, min}: {max?: number; min?: number}) {
   };
 
   return (
-    <div className="flex flex-col">
-      <label className="mb-4">
-        <span>from</span>
+    <div className="flex flex-col md:flex-row">
+      <label className="">
+        <span className=" text-sm!">¥</span>
         <input
           name="minPrice"
-          className="text-black"
+          className="text-black text-sm! ml-2"
           type="number"
           value={minPrice ?? ''}
-          placeholder={'$'}
+          placeholder={'¥'}
           onChange={onChangeMin}
         />
+        <span className="ml-2 text-xs!">円 〜</span>
       </label>
-      <label>
-        <span>to</span>
+      <label className="ml-2">
+        <span className=" text-sm!">¥</span>
         <input
           name="maxPrice"
-          className="text-black"
+          className="text-black text-sm! ml-2"
           type="number"
           value={maxPrice ?? ''}
-          placeholder={'$'}
+          placeholder={'¥'}
           onChange={onChangeMax}
         />
+        <span className="ml-2 text-xs!">円</span>
       </label>
     </div>
   );

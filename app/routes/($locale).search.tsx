@@ -3,7 +3,13 @@ import {
   type MetaArgs,
   type LoaderFunctionArgs,
 } from '@shopify/remix-oxygen';
-import {Await, Form, useLoaderData, useRouteLoaderData} from '@remix-run/react';
+import {
+  Await,
+  Form,
+  Link,
+  useLoaderData,
+  useRouteLoaderData,
+} from '@remix-run/react';
 import {Suspense} from 'react';
 import {
   Pagination,
@@ -23,6 +29,7 @@ import {getImageLoadingPriority, PAGINATION_SIZE} from '~/lib/const';
 import {seoPayload} from '~/lib/seo.server';
 import {Nav} from '~/components/Nav';
 import type {RootLoader} from '~/root';
+import {Button} from '~/components/Button';
 
 import {
   getFeaturedData,
@@ -165,8 +172,17 @@ function NoResults({
   return (
     <>
       {noResults && (
-        <Section padding="x">
-          <Text className="opacity-50">検索結果が見つかりませんでした。</Text>
+        <Section
+          padding="x"
+          className="flex flex-col justify-center items-center py-12 mx-auto text-center"
+        >
+          <Text className="mx-auto w-full text-center opacity-50 max-w-none!">
+            検索結果が見つかりませんでした。
+          </Text>
+          <p className="text-sm!">検索ワードを変えて再度検索してください。</p>
+          <Button to="/" variant="secondary" className="text-sm!">
+            トップページへ戻る
+          </Button>
         </Section>
       )}
       <Suspense>
@@ -179,7 +195,7 @@ function NoResults({
             const {featuredCollections, featuredProducts} = result;
 
             return (
-              <>
+              <div className="mt-12">
                 <FeaturedCollections
                   title="人気のコレクション"
                   collections={featuredCollections}
@@ -188,7 +204,7 @@ function NoResults({
                   title="人気の商品"
                   products={featuredProducts}
                 />
-              </>
+              </div>
             );
           }}
         </Await>
