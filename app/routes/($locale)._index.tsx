@@ -5,6 +5,8 @@ import {Await, useLoaderData, useRouteLoaderData} from '@remix-run/react';
 import {getSeoMeta} from '@shopify/hydrogen';
 
 import {FeaturedCollections} from '~/components/FeaturedCollections';
+import {CategoryMenuGrid} from '~/components/CategoryMenuGrid';
+import type {CategoryMenuData} from '~/components/CategoryMenuGrid';
 import {ProductSwimlane} from '~/components/ProductSwimlane';
 import {RecentlyViewedSwimlane} from '~/components/RecentlyViewedSwimlane';
 import {MEDIA_FRAGMENT, PRODUCT_CARD_FRAGMENT} from '~/data/fragments';
@@ -15,11 +17,58 @@ import {HeroSlider} from '~/components/HeroSlider';
 import {CollectionTopSellingModule} from '~/components/CollectionTopSellingModule';
 import {Nav} from '~/components/Nav';
 import type {RootLoader} from '~/root';
+import type {HomepageHerosQuery} from 'storefrontapi.generated';
+
+/** 開発時のみ: ヒーロースライダー用コレクションデータの切り分けログ */
+function logHomepageHeroDebug(
+  source: 'loader' | 'ui',
+  response: HomepageHerosQuery | null | undefined,
+) {
+  if (!import.meta.env.DEV || !response?.collections?.nodes) {
+    return;
+  }
+  const nodes = response.collections.nodes;
+  // eslint-disable-next-line no-console
+  console.groupCollapsed(
+    `[HeroDebug:${source}] homepageHeros: API は ${nodes.length} 件（first:${HOMEPAGE_HERO_COLLECTIONS_FETCH_FIRST}, UPDATED_AT）`,
+  );
+  for (const c of nodes) {
+    const ref = c.spread?.reference as {__typename?: string} | null | undefined;
+    // eslint-disable-next-line no-console
+    console.log(c.handle, {
+      title: c.title?.slice(0, 40),
+      hasSpreadReference: Boolean(ref),
+      spreadRefTypename: ref?.__typename ?? null,
+      heroTitle: c.heading?.value ? 'set' : 'empty',
+      heroByline: c.byline?.value ? 'set' : 'empty',
+      heroCta: c.cta?.value ? 'set' : 'empty',
+    });
+  }
+  const passed = nodes
+    .filter((c) => Boolean(c.spread?.reference))
+    .slice(0, HOMEPAGE_HERO_SLIDES_MAX);
+  // eslint-disable-next-line no-console
+  console.log(
+    `[HeroDebug:${source}] spread.reference あり → 最大 ${HOMEPAGE_HERO_SLIDES_MAX} 件で HeroSlider へ ${passed.length} 件`,
+    passed.map((c) => c.handle),
+  );
+  // eslint-disable-next-line no-console
+  console.groupEnd();
+}
 
 /** トップに売れ筋ブロックを出すコレクションハンドル（空なら非表示） */
 export const HOMEPAGE_COLLECTION_TOP_SELLING_HANDLE = 'all';
 
 export const HOMEPAGE_COLLECTION_HOUMONGI_HANDLE = 'houmongi';
+
+/**
+ * ヒーロー候補として Storefront から取るコレクション数（更新が新しい順）。
+ * first: 8 だけだと spread 未設定の新規ばかりになりやすいので多めに取り、下記 MAX で絞る。
+ */
+export const HOMEPAGE_HERO_COLLECTIONS_FETCH_FIRST = 50;
+
+/** スライダーに載せる最大枚数（spread ありのものからこの件数まで） */
+export const HOMEPAGE_HERO_SLIDES_MAX = 8;
 
 export const headers = routeHeaders;
 
@@ -104,17 +153,41 @@ function loadDeferredData({context}: LoaderFunctionArgs) {
       return null;
     });
 
-  const heros = context.storefront
-    .query(HOMEPAGE_HEROS_QUERY, {
+  const categoryMenus = context.storefront
+    .query(CATEGORY_MENUS_QUERY, {
       variables: {
         country,
         language,
       },
     })
     .catch((error) => {
+      // eslint-disable-next-line no-console
+      console.error(error);
+      return null;
+    });
+
+  const heros = context.storefront
+    .query(HOMEPAGE_HEROS_QUERY, {
+      variables: {
+        country,
+        language,
+        heroCollectionsFirst: HOMEPAGE_HERO_COLLECTIONS_FETCH_FIRST,
+      },
+    })
+    .then((data) => {
+      logHomepageHeroDebug('loader', data);
+      return data;
+    })
+    .catch((error) => {
       // Log query errors, but don't throw them so the page can still render
       // eslint-disable-next-line no-console
       console.error(error);
+      if (import.meta.env.DEV) {
+        // eslint-disable-next-line no-console
+        console.warn(
+          '[HeroDebug:loader] homepageHeros クエリ失敗 → HeroSlider 非表示',
+        );
+      }
       return null;
     });
 
@@ -122,6 +195,7 @@ function loadDeferredData({context}: LoaderFunctionArgs) {
     heros,
     featuredProducts,
     featuredCollections,
+    categoryMenus,
   };
 }
 
@@ -130,7 +204,7 @@ export const meta = ({matches}: MetaArgs<typeof loader>) => {
 };
 
 export default function Homepage() {
-  const {heros, featuredCollections, featuredProducts} =
+  const {heros, featuredCollections, featuredProducts, categoryMenus} =
     useLoaderData<typeof loader>();
   const rootData = useRouteLoaderData<RootLoader>('root');
   const collectionNav = rootData?.layout?.collectionNav;
@@ -143,10 +217,11 @@ export default function Homepage() {
       {heros && (
         <Suspense fallback={<div>Loading...</div>}>
           <Await resolve={heros}>
-            {(response) => {
-              const heroNodes = (response?.collections?.nodes ?? []).filter(
-                (collection) => Boolean(collection?.spread?.reference),
-              );
+            {(response: HomepageHerosQuery | null) => {
+              logHomepageHeroDebug('ui', response ?? undefined);
+              const heroNodes = (response?.collections?.nodes ?? [])
+                .filter((collection) => Boolean(collection?.spread?.reference))
+                .slice(0, HOMEPAGE_HERO_SLIDES_MAX);
               return (
                 <HeroSlider
                   heros={heroNodes}
@@ -221,6 +296,26 @@ export default function Homepage() {
               </Await>
             </Suspense>
           )}
+
+          {categoryMenus && (
+            <Suspense>
+              <Await resolve={categoryMenus}>
+                {(response) => {
+                  if (!response) return <></>;
+                  const r = response as {
+                    categoriesMenu?: CategoryMenuData | null;
+                    sceneMenu?: CategoryMenuData | null;
+                  };
+                  return (
+                    <CategoryMenuGrid
+                      categoriesMenu={r.categoriesMenu}
+                      sceneMenu={r.sceneMenu}
+                    />
+                  );
+                }}
+              </Await>
+            </Suspense>
+          )}
         </div>
         <div className="hidden w-full max-w-48 sm:block">
           <Nav collectionNav={collectionNav} />
@@ -274,9 +369,9 @@ const HOMEPAGE_SEO_QUERY = `#graphql
 ` as const;
 
 const HOMEPAGE_HEROS_QUERY = `#graphql
-  query homepageHeros($country: CountryCode, $language: LanguageCode)
+  query homepageHeros($country: CountryCode, $language: LanguageCode, $heroCollectionsFirst: Int!)
   @inContext(country: $country, language: $language) {
-    collections(first: 8, sortKey: UPDATED_AT) {
+    collections(first: $heroCollectionsFirst, sortKey: UPDATED_AT) {
       nodes {
         ...CollectionContent
       }
@@ -296,6 +391,38 @@ export const HOMEPAGE_FEATURED_PRODUCTS_QUERY = `#graphql
     }
   }
   ${PRODUCT_CARD_FRAGMENT}
+` as const;
+
+export const CATEGORY_MENUS_QUERY = `#graphql
+  query categoryMenus($country: CountryCode, $language: LanguageCode)
+  @inContext(country: $country, language: $language) {
+    categoriesMenu: menu(handle: "link-list-categories") {
+      id
+      items {
+        id
+        title
+        url
+        items {
+          id
+          title
+          url
+        }
+      }
+    }
+    sceneMenu: menu(handle: "link-list-scene") {
+      id
+      items {
+        id
+        title
+        url
+        items {
+          id
+          title
+          url
+        }
+      }
+    }
+  }
 ` as const;
 
 // @see: https://shopify.dev/api/storefront/current/queries/collections

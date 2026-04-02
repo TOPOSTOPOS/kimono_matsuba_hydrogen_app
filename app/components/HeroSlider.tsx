@@ -56,6 +56,16 @@ export function HeroSlider({heros, height, loading, top}: HeroSliderProps) {
     }
   }, []);
 
+  useEffect(() => {
+    if (!import.meta.env.DEV) return;
+    // eslint-disable-next-line no-console
+    console.log('[HeroDebug:HeroSlider]', {
+      herosCount: heros.length,
+      ready,
+      willRenderSplide: ready && heros.length > 0,
+    });
+  }, [heros.length, ready]);
+
   const handleSlideChange = (_splide: unknown, newIndex: number) => {
     setActiveIndex(newIndex);
   };
