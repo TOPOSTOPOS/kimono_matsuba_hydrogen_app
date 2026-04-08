@@ -36,6 +36,39 @@ import type {RootLoader} from '~/root';
 
 export const headers = routeHeaders;
 
+const ALLOWED_TAG_LABELS = ['買う', '借りる'] as const;
+
+/** buy/rental コレクションではタグフィルター自体を非表示にするハンドル一覧 */
+const HIDE_TAG_FILTER_HANDLES = ['buy', 'rental'] as const;
+
+function restrictTagFilter(filters: Filter[], collectionHandle?: string): Filter[] {
+  const hideTagFilter = HIDE_TAG_FILTER_HANDLES.includes(
+    collectionHandle as (typeof HIDE_TAG_FILTER_HANDLES)[number],
+  );
+
+  return filters
+    .map((filter) => {
+      const isTagFilter = filter.values.some((v) => {
+        try {
+          return 'tag' in (JSON.parse(v.input as string) as object);
+        } catch {
+          return false;
+        }
+      });
+      if (!isTagFilter) return filter;
+      if (hideTagFilter) return null;
+      return {
+        ...filter,
+        values: filter.values.filter((v) =>
+          ALLOWED_TAG_LABELS.includes(
+            v.label as (typeof ALLOWED_TAG_LABELS)[number],
+          ),
+        ),
+      };
+    })
+    .filter((filter): filter is Filter => filter !== null && filter.values.length > 0);
+}
+
 export async function loader({params, request, context}: LoaderFunctionArgs) {
   const paginationVariables = getPaginationVariables(request, {
     pageBy: 8,
@@ -168,7 +201,10 @@ export default function Collection() {
           </PageHeader>
           <Section>
             <SortFilter
-              filters={collection.products.filters as Filter[]}
+              filters={restrictTagFilter(
+                collection.products.filters as Filter[],
+                collection.handle,
+              )}
               appliedFilters={appliedFilters}
               collections={collections}
             >

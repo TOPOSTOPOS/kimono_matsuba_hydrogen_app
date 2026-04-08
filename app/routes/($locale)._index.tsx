@@ -1,7 +1,13 @@
 import {defer} from '@shopify/remix-oxygen';
 import type {MetaArgs, LoaderFunctionArgs} from '@shopify/remix-oxygen';
 import {Suspense} from 'react';
-import {Await, useLoaderData, useRouteLoaderData} from '@remix-run/react';
+import {
+  Await,
+  Link,
+  useLoaderData,
+  useLocation,
+  useRouteLoaderData,
+} from '@remix-run/react';
 import {getSeoMeta} from '@shopify/hydrogen';
 
 import {FeaturedCollections} from '~/components/FeaturedCollections';
@@ -55,6 +61,10 @@ function logHomepageHeroDebug(
   // eslint-disable-next-line no-console
   console.groupEnd();
 }
+
+/** 買う / 借りる タブのリンク先コレクションハンドル */
+export const BUY_COLLECTION_HANDLE = 'buy';
+export const RENT_COLLECTION_HANDLE = 'rental';
 
 /** トップに売れ筋ブロックを出すコレクションハンドル（空なら非表示） */
 export const HOMEPAGE_COLLECTION_TOP_SELLING_HANDLE = 'all';
@@ -234,7 +244,7 @@ export default function Homepage() {
           </Await>
         </Suspense>
       )}
-
+      <BuyOrRentTabs />
       <div className="flex justify-between mx-auto mt-9 w-full sm:pt-10 max-w-245 pb-15">
         <div className="z-0 order-1 w-full max-w-187">
           <RecentlyViewedSwimlane />
@@ -322,6 +332,71 @@ export default function Homepage() {
         </div>
       </div>
     </>
+  );
+}
+
+function BuyOrRentTabs() {
+  const {pathname} = useLocation();
+  const buyPath = `/collections/${BUY_COLLECTION_HANDLE}`;
+  const rentPath = `/collections/${RENT_COLLECTION_HANDLE}`;
+
+  const isBuy = pathname.startsWith(buyPath);
+  const isRent = pathname.startsWith(rentPath);
+
+  const baseClass =
+    'relative flex flex-1 items-center justify-center gap-2 py-4 text-sm font-medium tracking-wide transition-colors duration-200 focus-visible:outline-none';
+  const activeClass =
+    'text-primary after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-primary';
+  const inactiveClass = 'text-primary/80 hover:text-primary/50';
+
+  return (
+    <div className="sticky top-(--height-nav) z-10 w-full border-b border-primary/10 bg-contrast">
+      <div className="flex mx-auto max-w-245">
+        <Link
+          to={buyPath}
+          prefetch="intent"
+          className={`${baseClass} ${isBuy ? activeClass : inactiveClass}`}
+        >
+          <svg
+            className="w-4 h-4 shrink-0"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+            aria-hidden="true"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={1.5}
+              d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"
+            />
+          </svg>
+          買う
+        </Link>
+        <div className="self-stretch w-px bg-primary/10" aria-hidden="true" />
+        <Link
+          to={rentPath}
+          prefetch="intent"
+          className={`${baseClass} ${isRent ? activeClass : inactiveClass}`}
+        >
+          <svg
+            className="w-4 h-4 shrink-0"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+            aria-hidden="true"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={1.5}
+              d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+            />
+          </svg>
+          借りる
+        </Link>
+      </div>
+    </div>
   );
 }
 
