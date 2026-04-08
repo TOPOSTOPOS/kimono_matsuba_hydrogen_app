@@ -119,10 +119,10 @@
     --screen-height-dynamic: 100vh;
 
     @media (min-width: 32em) {
-      --height-nav: 4rem;
+      --height-nav: 3rem;
     }
     @media (min-width: 48em) {
-      --height-nav: 6rem;
+      --height-nav: 4rem;
       --font-size-heading: 2rem; /* text-2xl */
       --font-size-display: 2.25rem; /* text-3xl */
     }

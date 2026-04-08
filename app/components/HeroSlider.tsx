@@ -94,7 +94,7 @@ export function HeroSlider({heros, height, loading, top}: HeroSliderProps) {
           </SplideSlide>
         ))}
       </Splide>
-      <div className="relative pt-5 sidebar-carousel-navigation">
+      <div className="relative py-5 border-b sidebar-carousel-navigation border-primary/05">
         <div className="flex gap-2 justify-center items-center">
           {heros.map((hero, index) => (
             <div

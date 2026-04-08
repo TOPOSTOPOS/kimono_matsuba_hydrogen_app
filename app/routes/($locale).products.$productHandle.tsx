@@ -943,7 +943,7 @@ export function ProductForm({
                   quantity={1}
                   disabled={isDisableAddToCart}
                   className={clsx(
-                    'inline-block px-6 py-3 font-medium text-center rounded-sm bg-[#361d9a] text-contrast',
+                    'inline-block px-6 py-3 font-medium text-center rounded-sm bg-[#643e84] text-contrast',
                     isDisableAddToCart && 'opacity-50',
                   )}
                 >
