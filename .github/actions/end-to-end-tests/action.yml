@@ -1,12 +1,13 @@
 name: 🧪 End-to-end tests
+description: Run Playwright end-to-end tests
 
 inputs:
   url:
+    description: URL to test against
     required: false
-    type: string
   auth-bypass-token:
+    description: Auth bypass token for protected environments
     required: false
-    type: string
 
 runs:
   using: 'composite'
@@ -16,7 +17,7 @@ runs:
 
     - name: 📥 Install dependencies
       shell: 'bash'
-      run: npm ci
+      run: npm ci --include=optional
 
     - name: 📦 Build
       shell: 'bash'
