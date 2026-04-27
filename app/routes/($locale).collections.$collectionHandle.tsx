@@ -41,7 +41,10 @@ const ALLOWED_TAG_LABELS = ['買う', '借りる'] as const;
 /** buy/rental コレクションではタグフィルター自体を非表示にするハンドル一覧 */
 const HIDE_TAG_FILTER_HANDLES = ['buy', 'rental'] as const;
 
-function restrictTagFilter(filters: Filter[], collectionHandle?: string): Filter[] {
+function restrictTagFilter(
+  filters: Filter[],
+  collectionHandle?: string,
+): Filter[] {
   const hideTagFilter = HIDE_TAG_FILTER_HANDLES.includes(
     collectionHandle as (typeof HIDE_TAG_FILTER_HANDLES)[number],
   );
@@ -66,7 +69,9 @@ function restrictTagFilter(filters: Filter[], collectionHandle?: string): Filter
         ),
       };
     })
-    .filter((filter): filter is Filter => filter !== null && filter.values.length > 0);
+    .filter(
+      (filter): filter is Filter => filter !== null && filter.values.length > 0,
+    );
 }
 
 export async function loader({params, request, context}: LoaderFunctionArgs) {

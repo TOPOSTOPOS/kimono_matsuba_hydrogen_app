@@ -258,7 +258,7 @@ export default function Product() {
 
   return (
     <div className="bg-white">
-      <Section className="px-0 mx-auto w-full md:px-8 lg:px-12 max-w-245">
+      <Section className="px-0 mx-auto w-full md:px-8 lg:px-12 md:max-w-245">
         <div className="grid items-start mt-9 md:gap-6 lg:gap-20 md:grid-cols-2 lg:grid-cols-2">
           <ProductGallery media={media.nodes} className="w-full basis-1/2" />
           <div className="basis-1/2">

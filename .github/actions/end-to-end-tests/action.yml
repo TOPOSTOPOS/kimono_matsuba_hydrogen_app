@@ -24,7 +24,7 @@ runs:
 
     - name: 💾 Turbo cache
       id: turbo-cache
-      uses: actions/cache@v3
+      uses: actions/cache@v4
       with:
         path: |
           node_modules/.cache/turbo
@@ -38,7 +38,7 @@ runs:
       run: echo "PLAYWRIGHT_VERSION=$(npm ls @playwright/test | grep @playwright -m 1 | sed 's/.*@//')"  >> $GITHUB_ENV
 
     - name: 💾 Cache Playwright binaries
-      uses: actions/cache@v3
+      uses: actions/cache@v4
       id: playwright-cache
       with:
         path: |
@@ -60,7 +60,7 @@ runs:
       run: URL=${{ inputs.url }} AUTH_BYPASS_TOKEN=${{ inputs.auth-bypass-token }} npx playwright test
 
     - name: 🗒 Report
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       if: always()
       with:
         name: playwright-report
