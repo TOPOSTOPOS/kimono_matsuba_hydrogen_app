@@ -74,7 +74,7 @@ export default function AllProducts() {
   const rootData = useRouteLoaderData<RootLoader>('root');
   const collectionNav = rootData?.layout?.collectionNav;
   return (
-    <div className="flex justify-between pt-10 mx-auto mt-9 w-full max-w-245 pb-15">
+    <div className="flex justify-between pt-10 mx-auto mt-9 w-full md:max-w-245 pb-15">
       <div className="z-0 order-1 w-full max-w-187">
         <PageHeader
           heading="すべての商品"

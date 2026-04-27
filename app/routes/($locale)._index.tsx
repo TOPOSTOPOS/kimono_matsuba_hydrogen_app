@@ -314,11 +314,15 @@ export default function Homepage() {
                   if (!response) return <></>;
                   const r = response as {
                     categoriesMenu?: CategoryMenuData | null;
+                    categoriesRentalMenu?: CategoryMenuData | null;
+                    categoriesCleaningMenu?: CategoryMenuData | null;
                     sceneMenu?: CategoryMenuData | null;
                   };
                   return (
                     <CategoryMenuGrid
                       categoriesMenu={r.categoriesMenu}
+                      categoriesRentalMenu={r.categoriesRentalMenu}
+                      categoriesCleaningMenu={r.categoriesCleaningMenu}
                       sceneMenu={r.sceneMenu}
                     />
                   );
@@ -471,7 +475,33 @@ export const HOMEPAGE_FEATURED_PRODUCTS_QUERY = `#graphql
 export const CATEGORY_MENUS_QUERY = `#graphql
   query categoryMenus($country: CountryCode, $language: LanguageCode)
   @inContext(country: $country, language: $language) {
-    categoriesMenu: menu(handle: "link-list-categories") {
+    categoriesMenu: menu(handle: "category-nav") {
+      id
+      items {
+        id
+        title
+        url
+        items {
+          id
+          title
+          url
+        }
+      }
+    }
+    categoriesRentalMenu: menu(handle: "category-nav-rental") {
+      id
+      items {
+        id
+        title
+        url
+        items {
+          id
+          title
+          url
+        }
+      }
+    }
+    categoriesCleaningMenu: menu(handle: "category-nav-cleaning") {
       id
       items {
         id

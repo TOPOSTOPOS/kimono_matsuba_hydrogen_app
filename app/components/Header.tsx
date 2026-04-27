@@ -140,7 +140,7 @@ function MenuMobileNav({
   collectionNav?: SerializeFrom<RootLoader>['layout']['collectionNav'];
 }) {
   return (
-    <nav className="grid overflow-y-auto h-screen-no-nav gap-4 px-6 py-4 sm:gap-6 sm:px-8 sm:py-4">
+    <nav className="grid overflow-y-auto gap-4 px-6 py-4 h-screen-no-nav sm:gap-6 sm:px-8 sm:py-4">
       {hasGroupedCollectionNav(collectionNav) && (
         <div className="pb-2 border-b border-[#E0E0E0]">
           <CollectionNavStacked collectionNav={collectionNav} />
