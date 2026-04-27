@@ -1,18 +1,17 @@
-import {useEffect, useMemo} from 'react';
-import {useFetcher} from '@remix-run/react';
+import {useEffect, useMemo, useState} from 'react';
+import {useFetcher, useRouteLoaderData} from '@remix-run/react';
 import type {SerializeFrom} from '@remix-run/server-runtime';
 import clsx from 'clsx';
 
 import type {LatestArticleSummary} from '~/routes/($locale).api.latest-articles';
 import {Text} from '~/components/Text';
 import {Link} from '~/components/Link';
+import {IconCaret} from '~/components/Icon';
 import type {RootLoader} from '~/root';
 import {usePrefixPathWithLocale} from '~/lib/utils';
 
-/** Shopify ブログハンドル＝URL セグメント（`journal.*` ルート） */
 const BLOG_HANDLE = 'journal';
 
-/** メタフィールド `custom.collection_categories` の選択肢と一致させる */
 export const COLLECTION_CATEGORY_METAFIELD_VALUE = {
   SCENE: 'シーンから探す',
   TYPE: '種類から探す',
@@ -41,9 +40,361 @@ export function groupCollectionNavNodes(nodes: CollectionNavNode[]) {
 export function hasGroupedCollectionNav(
   collectionNav?: SerializeFrom<RootLoader>['layout']['collectionNav'],
 ) {
-  const {scene, type} = groupCollectionNavNodes(collectionNav?.nodes ?? []);
-  return scene.length > 0 || type.length > 0;
+  const {scene} = groupCollectionNavNodes(collectionNav?.nodes ?? []);
+  return scene.length > 0 || true;
 }
+
+// ─── TypeNav data ──────────────────────────────────────────────────────────────
+
+type TypeNavGroupItem = {
+  id: string;
+  title: string;
+  to: string;
+  items: TypeNavGroupItem[];
+};
+
+type TypeNavGroup = {
+  label: string;
+  items: TypeNavGroupItem[];
+};
+
+function mapNavItem(raw: any): TypeNavGroupItem {
+  return {
+    id: raw.id,
+    title: raw.title,
+    to: raw.to,
+    items: Array.isArray(raw.items) ? raw.items.map(mapNavItem) : [],
+  };
+}
+
+function useTypeNavGroups(): TypeNavGroup[] {
+  const rootData = useRouteLoaderData<RootLoader>('root');
+  const layout = rootData?.layout;
+
+  return useMemo(
+    () => [
+      {
+        label: '買う',
+        items: (layout?.categoryNavBuy?.items ?? []).map(mapNavItem),
+      },
+      {
+        label: '借りる',
+        items: (layout?.categoryNavRental?.items ?? []).map(mapNavItem),
+      },
+      {
+        label: 'お手入れ',
+        items: (layout?.categoryNavCleaning?.items ?? []).map(mapNavItem),
+      },
+    ],
+    [layout],
+  );
+}
+
+// ─── PC: ZOZO型マルチカラム（JS state） ───────────────────────────────────────
+// flex の兄弟カラムで実装するため、h-full の問題が起きない。
+// L1（子）→ L2（孫）→ L3（ひ孫）まで対応。
+
+/**
+ * 1カラム分のアイテムリスト（共通）
+ * - 子なし → Link
+ * - 子あり → div + ›  （クリック不可、ホバーで次カラムへ）
+ * onEnter の第2引数に hovered 要素の offsetTop を渡し、flyout 位置合わせに使う
+ */
+const NavArrow = () => (
+  <span className="shrink-0">
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      viewBox="0 0 14 32"
+      width="6"
+      height="20"
+      role="img"
+      aria-hidden="true"
+      fill="#a0a0a0"
+    >
+      <path d="M1.867 28.533a1.867 1.867 0 0 1-1.32-3.187l9.346-9.347L.547 6.652a1.867 1.867 0 0 1 2.64-2.64l10.667 10.667a1.867 1.867 0 0 1 0 2.64L3.187 27.986a1.86 1.86 0 0 1-1.32.547z"></path>
+    </svg>
+  </span>
+);
+
+function NavColumn({
+  items,
+  activeIdx,
+  onEnter,
+  bg,
+  showArrow = true,
+}: {
+  items: TypeNavGroupItem[];
+  activeIdx: number | null;
+  onEnter: (i: number | null, offsetTop?: number) => void;
+  bg: string;
+  showArrow?: boolean;
+}) {
+  return (
+    <div className={clsx('flex flex-col shrink-0', bg)}>
+      {items.map((item, i) => {
+        const hasChildren = item.items.length > 0;
+        const isActive = activeIdx === i;
+
+        if (!hasChildren) {
+          return (
+            <Link
+              key={item.id}
+              to={item.to}
+              prefetch="intent"
+              onMouseEnter={() => onEnter(null)}
+              className="px-3 py-1.5 text-sm flex items-center justify-between text-primary transition-colors duration-150 whitespace-nowrap"
+            >
+              <span className="text-[13px]">{item.title}</span>
+              {showArrow && <NavArrow />}
+            </Link>
+          );
+        }
+
+        return (
+          <div
+            key={item.id}
+            onMouseEnter={(e) =>
+              onEnter(i, (e.currentTarget as HTMLDivElement).offsetTop)
+            }
+            className={clsx(
+              'flex items-center justify-between px-3 py-1.5 text-primary cursor-default transition-colors duration-150 whitespace-nowrap select-none',
+              isActive ? 'bg-primary/10' : 'hover:bg-primary/10',
+            )}
+          >
+            <span className="text-[13px]">{item.title}</span>
+            {showArrow && <NavArrow />}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+/**
+ * トップレベル親項目（買う / 借りる / お手入れ）— PC用
+ * 常時表示。ホバーで右に L2/L3 flyout を absolute で表示。
+ * flyout の top はホバー行の offsetTop に合わせる。
+ */
+function DesktopGroupItem({
+  group,
+  isFooter = false,
+}: {
+  group: TypeNavGroup;
+  isFooter?: boolean;
+}) {
+  const [l1, setL1] = useState<number | null>(null);
+  const [l2, setL2] = useState<number | null>(null);
+  const [l2Top, setL2Top] = useState(0);
+  const [l3Top, setL3Top] = useState(0);
+
+  if (!group.items.length) {
+    return (
+      <div className="px-2 py-2 font-semibold text-primary/80">
+        {group.label}
+      </div>
+    );
+  }
+
+  const l2Items = l1 !== null ? group.items[l1]?.items ?? [] : [];
+  const l3Items = l2 !== null ? l2Items[l2]?.items ?? [] : [];
+
+  return (
+    <div
+      onMouseLeave={(e) => {
+        if (!e.currentTarget.contains(e.relatedTarget as Node)) {
+          setL1(null);
+          setL2(null);
+        }
+      }}
+    >
+      <div className="px-2 py-2 cursor-default select-none">
+        <span className="text-base font-semibold text-primary/80">
+          {group.label}
+        </span>
+      </div>
+
+      {/* L1 カラム — relative で flyout の基点にする */}
+      <div className="relative">
+        <NavColumn
+          items={group.items}
+          activeIdx={l1}
+          onEnter={(i, offsetTop) => {
+            setL1(i);
+            setL2(null);
+            if (offsetTop !== undefined) setL2Top(offsetTop);
+          }}
+          bg={isFooter ? '#D7D2EB' : 'bg-[#fafaf9]'}
+        />
+
+        {/* L2 flyout — ホバー行の右上から absolute */}
+        {l2Items.length > 0 && (
+          <div
+            className="absolute left-full z-10 shadow-lg"
+            style={{top: `${l2Top}px`}}
+          >
+            <div className="relative w-[200px] py-2 bg-[#fafaf9]">
+              <NavColumn
+                items={l2Items}
+                activeIdx={l2}
+                onEnter={(i, offsetTop) => {
+                  setL2(i);
+                  if (offsetTop !== undefined) setL3Top(offsetTop);
+                }}
+                bg="bg-[#fafaf9]"
+                showArrow={false}
+              />
+
+              {/* L3 flyout — L2 ホバー行の右上から absolute */}
+              {l3Items.length > 0 && (
+                <div
+                  className="absolute left-full z-20 shadow-lg"
+                  style={{top: `${l3Top}px`}}
+                >
+                  <NavColumn
+                    items={l3Items}
+                    activeIdx={null}
+                    onEnter={() => {}}
+                    bg="bg-[#D7D2EB]"
+                    showArrow={false}
+                  />
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ─── SP: アコーディオン ────────────────────────────────────────────────────────
+
+function AccordionItem({
+  item,
+  indent = 0,
+  isFooter = false,
+}: {
+  item: TypeNavGroupItem;
+  indent?: number;
+  isFooter?: boolean;
+}) {
+  const [open, setOpen] = useState(false);
+  const hasChildren = item.items.length > 0;
+  const pl = `${indent * 16 + 8}px`;
+
+  if (!hasChildren) {
+    return (
+      <Link
+        to={item.to}
+        prefetch="intent"
+        style={{paddingLeft: pl}}
+        className={clsx(
+          'block py-2 pr-2 text-sm text-primary border-b last:border-b-0 hover:opacity-60 transition-opacity',
+          isFooter ? 'border-[#643e84]' : 'border-[#E0E0E0]',
+        )}
+      >
+        {item.title}
+      </Link>
+    );
+  }
+
+  return (
+    <div>
+      <button
+        onClick={() => setOpen((v) => !v)}
+        style={{paddingLeft: pl}}
+        className={clsx(
+          'w-full flex items-center justify-between py-2 pr-2 text-sm text-primary border-b hover:opacity-70 transition-opacity',
+          isFooter ? 'border-[#643e84]' : 'border-[#E0E0E0]',
+        )}
+      >
+        {item.title}
+        <IconCaret direction={open ? 'up' : 'down'} />
+      </button>
+      {open && (
+        <div>
+          {item.items.map((child) => (
+            <AccordionItem
+              key={child.id}
+              item={child}
+              indent={indent + 1}
+              isFooter={isFooter}
+            />
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function AccordionGroup({
+  group,
+  isFooter,
+}: {
+  group: TypeNavGroup;
+  isFooter: boolean;
+}) {
+  return (
+    <div>
+      <div className="p-2 font-semibold text-primary/80">{group.label}</div>
+      <div className="">
+        {group.items.map((item) => (
+          <AccordionItem
+            key={item.id}
+            item={item}
+            indent={0}
+            isFooter={isFooter}
+          />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ─── TypeNavSection ────────────────────────────────────────────────────────────
+
+function TypeNavSection({
+  groups,
+  isFooter = false,
+}: {
+  groups: TypeNavGroup[];
+  isFooter?: boolean;
+}) {
+  const hasItems = groups.some((g) => g.items.length > 0);
+  if (!hasItems) return null;
+
+  return (
+    <div className="flex flex-col gap-5 w-full">
+      <Text
+        as="h2"
+        size="fine"
+        className="font-semibold text-primary/80 text-base!"
+      >
+        {COLLECTION_CATEGORY_METAFIELD_VALUE.TYPE}
+      </Text>
+
+      {/* PC: 常時表示 + ホバーで子をインライン展開 */}
+      <div className="hidden flex-col gap-6 lg:flex">
+        {groups.map((group) => (
+          <DesktopGroupItem
+            key={group.label}
+            group={group}
+            isFooter={isFooter}
+          />
+        ))}
+      </div>
+
+      {/* SP: タップでアコーディオン開閉 */}
+      <div className="flex flex-col gap-1 lg:hidden">
+        {groups.map((group) => (
+          <AccordionGroup key={group.label} group={group} isFooter={isFooter} />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ─── Articles ─────────────────────────────────────────────────────────────────
 
 type LatestArticlesResponse = {
   articles: LatestArticleSummary[];
@@ -56,12 +407,14 @@ export function Nav({
   collectionNav?: SerializeFrom<RootLoader>['layout']['collectionNav'];
   isFooter?: boolean;
 }) {
-  const {scene, type} = useMemo(
+  const {scene} = useMemo(
     () => groupCollectionNavNodes(collectionNav?.nodes ?? []),
     [collectionNav],
   );
 
-  const hasCollections = scene.length > 0 || type.length > 0;
+  const typeNavGroups = useTypeNavGroups();
+  const hasTypeGroups = typeNavGroups.some((g) => g.items.length > 0);
+  const hasCollections = scene.length > 0 || hasTypeGroups;
 
   const fetcher = useFetcher<LatestArticlesResponse>();
   const {load} = fetcher;
@@ -104,7 +457,7 @@ export function Nav({
         <div
           className={clsx(
             'flex flex-col gap-8 justify-end items-start w-full',
-            isFooter ? 'flex-row' : '',
+            isFooter ? 'sm:flex-row' : '',
           )}
         >
           {scene.length > 0 && (
@@ -114,12 +467,8 @@ export function Nav({
               isFooter={isFooter}
             />
           )}
-          {type.length > 0 && (
-            <CollectionNavGroup
-              title={COLLECTION_CATEGORY_METAFIELD_VALUE.TYPE}
-              collections={type}
-              isFooter={isFooter}
-            />
+          {hasTypeGroups && (
+            <TypeNavSection groups={typeNavGroups} isFooter={isFooter} />
           )}
         </div>
       )}
@@ -171,7 +520,7 @@ function NavJournalBlock({
               <Link
                 to={`/${BLOG_HANDLE}/${article.handle}`}
                 prefetch="intent"
-                className="text-xs line-clamp-2 hover:opacity-50 text-primary"
+                className="px-2 text-[13px] line-clamp-2 hover:opacity-50 text-primary"
               >
                 {article.title}
               </Link>
@@ -230,18 +579,21 @@ function CollectionNavGroup({
   );
 }
 
-/** モバイルドロワーなど縦並び用 */
+/** モバイルドロワー用縦並びナビ */
 export function CollectionNavStacked({
   collectionNav,
 }: {
   collectionNav?: SerializeFrom<RootLoader>['layout']['collectionNav'];
 }) {
-  const {scene, type} = useMemo(
+  const {scene} = useMemo(
     () => groupCollectionNavNodes(collectionNav?.nodes ?? []),
     [collectionNav],
   );
 
-  if (!scene.length && !type.length) {
+  const typeNavGroups = useTypeNavGroups();
+  const hasTypeGroups = typeNavGroups.some((g) => g.items.length > 0);
+
+  if (!scene.length && !hasTypeGroups) {
     return null;
   }
 
@@ -266,25 +618,7 @@ export function CollectionNavStacked({
           </div>
         </div>
       )}
-      {type.length > 0 && (
-        <div className="grid gap-3">
-          <Text as="h3" size="fine" className="font-semibold text-primary/80">
-            {COLLECTION_CATEGORY_METAFIELD_VALUE.TYPE}
-          </Text>
-          <div className="grid gap-2">
-            {type.map((item) => (
-              <Link
-                key={item.handle}
-                to={`/collections/${item.handle}`}
-                prefetch="intent"
-                className="text-sm border-b border-[#E0E0E0] pb-3"
-              >
-                {item.title}
-              </Link>
-            ))}
-          </div>
-        </div>
-      )}
+      {hasTypeGroups && <TypeNavSection groups={typeNavGroups} />}
     </div>
   );
 }

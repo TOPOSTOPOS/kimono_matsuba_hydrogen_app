@@ -227,6 +227,15 @@ const LAYOUT_QUERY = `#graphql
     collectionNav: collections(first: 250) {
       nodes { ...CollectionNavItem }
     }
+    categoryNavBuy: menu(handle: "category-nav") {
+      ...Menu
+    }
+    categoryNavRental: menu(handle: "category-nav-rental") {
+      ...Menu
+    }
+    categoryNavCleaning: menu(handle: "category-nav-cleaning") {
+      ...Menu
+    }
   }
   fragment Shop on Shop {
     id
@@ -314,10 +323,23 @@ async function getLayoutData({storefront, env}: AppLoadContext) {
       )
     : undefined;
 
+  const categoryNavBuy = data?.categoryNavBuy
+    ? parseMenu(data.categoryNavBuy, data.shop.primaryDomain.url, env)
+    : null;
+  const categoryNavRental = data?.categoryNavRental
+    ? parseMenu(data.categoryNavRental, data.shop.primaryDomain.url, env)
+    : null;
+  const categoryNavCleaning = data?.categoryNavCleaning
+    ? parseMenu(data.categoryNavCleaning, data.shop.primaryDomain.url, env)
+    : null;
+
   return {
     shop: data.shop,
     headerMenu,
     footerMenu,
     collectionNav: data.collectionNav,
+    categoryNavBuy,
+    categoryNavRental,
+    categoryNavCleaning,
   };
 }

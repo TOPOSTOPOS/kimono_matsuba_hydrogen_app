@@ -102,9 +102,13 @@ function MenuItemCard({item}: {item: CategoryMenuItemData}) {
 
 export function CategoryMenuGrid({
   categoriesMenu,
+  categoriesRentalMenu,
+  categoriesCleaningMenu,
   sceneMenu,
 }: {
   categoriesMenu: CategoryMenuData | null | undefined;
+  categoriesRentalMenu: CategoryMenuData | null | undefined;
+  categoriesCleaningMenu: CategoryMenuData | null | undefined;
   sceneMenu: CategoryMenuData | null | undefined;
 }) {
   if (!categoriesMenu && !sceneMenu) return null;
@@ -113,14 +117,39 @@ export function CategoryMenuGrid({
     <div className="flex flex-col gap-8 px-6 my-8 md:px-0 lg:px-0">
       {categoriesMenu && categoriesMenu.items.length > 0 && (
         <section>
-          <h2 className="mb-4 text-base font-semibold text-primary/80">
+          <h2 className="mb-4 text-base font-semibold  text-primary/80">
             種類から探す
           </h2>
+
+          <h3 className="mt-8 mb-4 text-base font-semibold text-primary/80">
+            買う
+          </h3>
           <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
             {categoriesMenu.items.map((item) => (
               <MenuItemCard key={item.id} item={item} />
             ))}
           </div>
+          <h3 className="mt-8 mb-4 text-base font-semibold text-primary/80">
+            借りる
+          </h3>
+          {categoriesRentalMenu && categoriesRentalMenu.items.length > 0 && (
+            <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+              {categoriesRentalMenu.items.map((item) => (
+                <MenuItemCard key={item.id} item={item} />
+              ))}
+            </div>
+          )}
+          <h3 className="mt-8 mb-4 text-base font-semibold text-primary/80">
+            お手入れ
+          </h3>
+          {categoriesCleaningMenu &&
+            categoriesCleaningMenu.items.length > 0 && (
+              <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+                {categoriesCleaningMenu.items.map((item) => (
+                  <MenuItemCard key={item.id} item={item} />
+                ))}
+              </div>
+            )}
         </section>
       )}
       {sceneMenu && sceneMenu.items.length > 0 && (
