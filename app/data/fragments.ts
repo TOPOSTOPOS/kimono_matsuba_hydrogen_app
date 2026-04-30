@@ -44,6 +44,7 @@ export const PRODUCT_CARD_FRAGMENT = `#graphql
     publishedAt
     handle
     vendor
+    tags
     metafield(namespace: "custom", key: "main_collection") {
       type
       value
