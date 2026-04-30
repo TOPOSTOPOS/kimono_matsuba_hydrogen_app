@@ -59,7 +59,11 @@ export async function loader({
       id: data.collection.id,
       handle: data.collection.handle,
       title: data.collection.title,
-      products: data.collection.products,
+      products: {
+        nodes: (
+          data.collection.products.nodes as Array<{tags: string[]} & (typeof data.collection.products.nodes)[number]>
+        ).filter((p) => !p.tags.includes('オプション')),
+      },
     },
   });
 }

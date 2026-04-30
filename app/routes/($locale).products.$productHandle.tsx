@@ -21,7 +21,7 @@ import invariant from 'tiny-invariant';
 import clsx from 'clsx';
 import DatePicker, {registerLocale} from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
-import {subDays} from 'date-fns';
+import {addDays, format, eachDayOfInterval} from 'date-fns';
 import {ja} from 'date-fns/locale/ja';
 import type {
   AttributeInput,
@@ -146,9 +146,54 @@ async function loadCriticalData({
       (metafield) => metafield?.key === 'is_enable_belt_option',
     )?.value === 'true';
 
-  let belts = null;
-  if (isEnableBeltOption) {
-    belts = await getBeltOptions(context.storefront);
+  // 振袖・袴フラグと不可日は別クエリで取得（PRODUCT_QUERY の型生成を壊さないため）
+  const [rentalMetafieldsResult, beltResult] = await Promise.all([
+    context.storefront.query(PRODUCT_RENTAL_METAFIELDS_QUERY, {
+      variables: {handle: productHandle},
+    }),
+    isEnableBeltOption ? getBeltOptions(context.storefront) : null,
+  ]);
+
+  const belts: BeltOption[] | null = beltResult ?? null;
+
+  const rentalMetafields: Array<{key: string; value: string} | null> =
+    (rentalMetafieldsResult as any)?.product?.metafields ?? [];
+  const isRental =
+    rentalMetafields.find((m) => m?.key === 'is_rental')?.value === 'true';
+  const isFurisode =
+    rentalMetafields.find((m) => m?.key === 'is_furisode')?.value === 'true';
+  const isHakama =
+    rentalMetafields.find((m) => m?.key === 'is_hakama')?.value === 'true';
+  const unavailableDatesRaw = rentalMetafields.find(
+    (m) => m?.key === 'unavailable_dates',
+  )?.value;
+  const unavailableDates: string[] = unavailableDatesRaw
+    ? (JSON.parse(unavailableDatesRaw) as string[])
+    : [];
+
+  let anshinPack: RentalOptionProduct | null = null;
+  let shishuHaneri: RentalOptionProduct | null = null;
+
+  if (isFurisode || isHakama) {
+    const rentalOptionsResult = await context.storefront.query(
+      RENTAL_OPTIONS_QUERY,
+    );
+    const apNode = (rentalOptionsResult as any)?.anshinPack?.nodes?.[0];
+    if (apNode?.variants?.nodes?.[0]) {
+      anshinPack = {
+        variantId: apNode.variants.nodes[0].id,
+        price: apNode.variants.nodes[0].price,
+        title: apNode.title,
+      };
+    }
+    const shNode = (rentalOptionsResult as any)?.shishuHaneri?.nodes?.[0];
+    if (shNode?.variants?.nodes?.[0]) {
+      shishuHaneri = {
+        variantId: shNode.variants.nodes[0].id,
+        price: shNode.variants.nodes[0].price,
+        title: shNode.title,
+      };
+    }
   }
 
   const recommended = getRecommendedProducts(context.storefront, product.id);
@@ -192,6 +237,12 @@ async function loadCriticalData({
     tabiOptionSizes,
     isEnableBeltOption,
     belts,
+    isRental,
+    isFurisode,
+    isHakama,
+    unavailableDates,
+    anshinPack,
+    shishuHaneri,
   };
 }
 
@@ -360,18 +411,21 @@ export function ProductForm({
   const {
     product,
     storeDomain,
-    sortedDeliverTimeOptions,
     tabiOptionTargets,
     tabiOptionSizes,
     isEnableBeltOption,
     belts,
+    isRental,
+    isFurisode,
+    isHakama,
+    unavailableDates,
+    anshinPack,
+    shishuHaneri,
   } = useLoaderData<typeof loader>();
 
   const currentDate = new Date();
   currentDate.setDate(currentDate.getDate() + 13);
   const minDate = currentDate;
-  const minDeliveryDate = new Date();
-  minDeliveryDate.setDate(minDate.getDate() - 4);
   const isEnableTabiOptionMetafield = product.metafields.find(
     (metafield) => metafield?.key === 'is_enable_tabi_option',
   );
@@ -379,26 +433,22 @@ export function ProductForm({
 
   const defaultOptionState = {
     startDate: minDate,
-    deliveryDate: minDeliveryDate,
-    deliveryTime: sortedDeliverTimeOptions[0],
     beltOption: null,
-    tabiTarget: null,
-    tabiSize: null,
+    tabiTarget: null as string | null,
+    tabiSize: null as string | null,
   };
 
   const [optionValues, setOptionValues] = useState(defaultOptionState);
   const [selectedBelts, setSelectedBelts] = useState<string[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [selectedAnshinPack, setSelectedAnshinPack] = useState(false);
+  const [selectedShishuHaneri, setSelectedShishuHaneri] = useState(false);
+  const [zooriSize, setZooriSize] = useState<string | null>(null);
+  const [hakamaSize, setHakamaSize] = useState<string | null>(null);
+  const [rangeError, setRangeError] = useState(false);
 
   const handleOptionChange = (name: string, value: string | Date) => {
-    const state = {...optionValues, [name]: value};
-
-    if (name == 'startDate') {
-      state.startDate = new Date(value);
-      state.deliveryDate = subDays(value, 4);
-    }
-
-    setOptionValues(state);
+    setOptionValues({...optionValues, [name]: value});
   };
 
   const handleBeltChange = (event: ChangeEvent<HTMLInputElement>) => {
@@ -411,6 +461,34 @@ export function ProductForm({
   };
 
   registerLocale('ja', ja);
+
+  const getRentalNights = (title: string): number => {
+    if (title.includes('1月用')) return 5;
+    if (title.includes('下見')) return 1;
+    return 3;
+  };
+
+  const selectedVariantTitle = product.selectedVariant?.title ?? '';
+  const rentalNights = getRentalNights(selectedVariantTitle);
+  const returnDate = addDays(optionValues.startDate, rentalNights);
+
+  const unavailableDateObjects = unavailableDates.map((d) => new Date(d));
+
+  const checkRangeHasUnavailable = (start: Date, end: Date): boolean => {
+    const days = eachDayOfInterval({start, end});
+    return days.some((day) => {
+      const dayStr = format(day, 'yyyy-MM-dd');
+      return unavailableDates.includes(dayStr);
+    });
+  };
+
+  const handleStartDateChange = (date: Date | null) => {
+    if (!date) return;
+    const nights = getRentalNights(selectedVariantTitle);
+    const end = addDays(date, nights);
+    setRangeError(checkRangeHasUnavailable(date, end));
+    setOptionValues({...optionValues, startDate: date});
+  };
 
   const closeRef = useRef<HTMLButtonElement>(null);
 
@@ -426,8 +504,6 @@ export function ProductForm({
     selectedVariant?.price?.amount &&
     selectedVariant?.compareAtPrice?.amount &&
     selectedVariant?.price?.amount < selectedVariant?.compareAtPrice?.amount;
-
-  const [quantity, setQuantity] = useState(1);
 
   const navigate = useNavigate();
 
@@ -452,18 +528,28 @@ export function ProductForm({
     {
       key: 'レンタル開始日',
       value: optionValues.startDate
-        ? optionValues.startDate.toLocaleDateString()
+        ? format(optionValues.startDate, 'yyyy/MM/dd')
         : '',
     },
     {
-      key: '配送日',
-      value: optionValues.deliveryDate
-        ? optionValues.deliveryDate.toLocaleDateString()
-        : '',
+      key: '返却日',
+      value: format(returnDate, 'yyyy/MM/dd'),
     },
     {
-      key: '配送時間',
-      value: optionValues.deliveryTime || '',
+      key: '草履サイズ',
+      value: zooriSize || '',
+    },
+    {
+      key: '袴サイズ',
+      value: hakamaSize || '',
+    },
+    {
+      key: '安心パック',
+      value: selectedAnshinPack ? 'あり' : '',
+    },
+    {
+      key: '刺繍半衿',
+      value: selectedShishuHaneri ? 'あり' : '',
     },
     {
       key: '連携ID',
@@ -480,12 +566,27 @@ export function ProductForm({
   if (
     (isEnableTabiOption &&
       (!optionValues.tabiTarget || !optionValues.tabiSize)) ||
-    (isEnableBeltOption && selectedBelts.length === 0)
+    (isEnableBeltOption && selectedBelts.length === 0) ||
+    ((isFurisode || isHakama) && !zooriSize) ||
+    (isHakama && !hakamaSize) ||
+    rangeError
   ) {
     isOptionError = true;
   }
 
   const isDisableAddToCart = cartTotalQuantity >= 1 || isOptionError;
+
+  const anshinPackPrice = anshinPack
+    ? parseFloat(anshinPack.price.amount)
+    : 1100;
+  const shishuHaneriPrice = shishuHaneri
+    ? parseFloat(shishuHaneri.price.amount)
+    : 2000;
+  const mainPrice = parseFloat(selectedVariant?.price?.amount ?? '0');
+  const totalPrice =
+    mainPrice +
+    (selectedAnshinPack ? anshinPackPrice : 0) +
+    (selectedShishuHaneri ? shishuHaneriPrice : 0);
 
   const lines: CartLineInput[] = [
     {
@@ -494,6 +595,22 @@ export function ProductForm({
       attributes,
     },
   ];
+
+  if (selectedAnshinPack && anshinPack) {
+    lines.push({
+      merchandiseId: anshinPack.variantId,
+      quantity: 1,
+      attributes: [{key: '種別', value: '安心パック'}],
+    });
+  }
+
+  if (selectedShishuHaneri && shishuHaneri) {
+    lines.push({
+      merchandiseId: shishuHaneri.variantId,
+      quantity: 1,
+      attributes: [{key: '種別', value: '刺繍半衿オプション'}],
+    });
+  }
 
   if (isEnableBeltOption && selectedBelts.length > 0) {
     selectedBelts.forEach((selectedBelt) => {
@@ -523,16 +640,42 @@ export function ProductForm({
   return (
     <form className="grid gap-10" encType="multipart/form-data">
       <div className="grid gap-5">
-        <div className="flex gap-1 items-end">
-          <Money
-            withoutTrailingZeros
-            data={selectedVariant?.price!}
-            as="span"
-            data-test="price"
-            className="inline-block text-2xl font-bold leading-none"
-          />
-          <span className="inline-block text-[10px]">税込</span>
-        </div>
+        {/* 料金表示 */}
+        {isFurisode && variants.length > 1 ? (
+          <div className="grid gap-2">
+            <p className="text-sm font-medium text-gray-600">料金一覧</p>
+            <div className="rounded-md border border-gray-200 divide-y divide-gray-100">
+              {variants.map((variant) => (
+                <div
+                  key={variant.id}
+                  className="flex justify-between items-center px-3 py-2 text-sm"
+                >
+                  <span className="text-gray-700">{variant.title}</span>
+                  <div className="flex items-baseline gap-0.5">
+                    <Money
+                      withoutTrailingZeros
+                      data={variant.price}
+                      as="span"
+                      className="font-semibold"
+                    />
+                    <span className="text-[10px] text-gray-500">税込</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        ) : (
+          <div className="flex gap-1 items-end">
+            <Money
+              withoutTrailingZeros
+              data={selectedVariant?.price!}
+              as="span"
+              data-test="price"
+              className="inline-block text-2xl font-bold leading-none"
+            />
+            <span className="inline-block text-[10px]">税込</span>
+          </div>
+        )}
         {isOnSale && (
           <Money
             withoutTrailingZeros
@@ -541,9 +684,225 @@ export function ProductForm({
             className="opacity-50 strike"
           />
         )}
-        {/* {!isOutOfStock && (
+        {!isOutOfStock && isRental && (
           <div>
-            <div className="grid gap-2">
+            <div className="grid gap-4">
+              {/* 利用開始日・返却日 */}
+              <div className="grid gap-2">
+                <div>
+                  <p className="block mb-1 text-sm font-medium text-gray-900">
+                    ご利用日（レンタル開始日）
+                  </p>
+                  <DatePicker
+                    toggleCalendarOnIconClick
+                    selected={optionValues.startDate}
+                    startDate={optionValues.startDate}
+                    endDate={returnDate}
+                    dateFormat="yyyy/MM/dd"
+                    minDate={minDate}
+                    locale="ja"
+                    excludeDates={unavailableDateObjects}
+                    onChange={handleStartDateChange}
+                    className="px-3 py-2 w-full text-sm rounded-lg border border-gray-300 shadow-sm focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary"
+                  />
+                </div>
+                <div className="flex justify-between px-1 text-sm text-gray-600">
+                  <span>
+                    返却日：
+                    <span className="font-medium text-gray-900">
+                      {format(returnDate, 'yyyy/MM/dd')}
+                    </span>
+                  </span>
+                  <span className="text-xs text-gray-400">
+                    {rentalNights}泊{rentalNights + 1}日
+                  </span>
+                </div>
+                {rangeError && (
+                  <p className="text-sm text-red-500">
+                    ※
+                    選択した期間にレンタル不可日が含まれています。別の日程を選択してください。
+                  </p>
+                )}
+              </div>
+
+              {/* 振袖・袴オプション */}
+              {(isFurisode || isHakama) && (
+                <div className="grid gap-3 p-3 bg-gray-50 rounded-lg">
+                  <p className="text-sm font-medium text-gray-900">
+                    オプション
+                  </p>
+
+                  {/* 安心パック */}
+                  {anshinPack && (
+                    <label className="flex gap-2 items-center cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={selectedAnshinPack}
+                        onChange={(e) =>
+                          setSelectedAnshinPack(e.target.checked)
+                        }
+                        className="rounded border-gray-300 size-4 text-primary focus:ring-primary"
+                      />
+                      <span className="text-sm text-gray-700">
+                        基本安心パック（＋¥
+                        {Math.round(anshinPackPrice).toLocaleString()}）
+                      </span>
+                    </label>
+                  )}
+
+                  {/* 草履サイズ */}
+                  <div>
+                    <Listbox
+                      value={zooriSize}
+                      onChange={(v: string) => setZooriSize(v)}
+                    >
+                      <Listbox.Label className="block mb-1 text-sm font-medium text-gray-900">
+                        草履サイズ
+                        <span className="ml-1 text-red-500">*</span>
+                      </Listbox.Label>
+                      <div className="relative mt-1">
+                        <Listbox.Button className="relative py-2 pr-10 pl-3 w-full text-left bg-white rounded-lg border border-gray-300 shadow-md cursor-default focus:outline-hidden focus:ring-1 focus:ring-primary focus:border-primary sm:text-sm">
+                          <span className="block truncate">
+                            {zooriSize || '選択してください'}
+                          </span>
+                          <span className="flex absolute inset-y-0 right-0 items-center pr-2 pointer-events-none">
+                            <IconCaret />
+                          </span>
+                        </Listbox.Button>
+                        <Listbox.Options className="overflow-auto absolute z-10 py-1 mt-1 w-full max-h-60 text-base bg-white rounded-md ring-1 ring-black ring-opacity-5 shadow-lg focus:outline-hidden sm:text-sm">
+                          {['M', 'L', 'LL'].map((size) => (
+                            <Listbox.Option
+                              key={size}
+                              value={size}
+                              className={({active}) =>
+                                clsx(
+                                  active
+                                    ? 'text-primary bg-primary-light'
+                                    : 'text-gray-900',
+                                  'cursor-default select-none relative py-2 pl-10 pr-4',
+                                )
+                              }
+                            >
+                              {({selected, active}) => (
+                                <>
+                                  <span
+                                    className={clsx(
+                                      selected ? 'font-medium' : 'font-normal',
+                                      'block truncate',
+                                    )}
+                                  >
+                                    {size}
+                                  </span>
+                                  {selected ? (
+                                    <span
+                                      className={clsx(
+                                        active
+                                          ? 'text-primary'
+                                          : 'text-primary-dark',
+                                        'flex absolute inset-y-0 left-0 items-center pl-3',
+                                      )}
+                                    >
+                                      <IconCheck />
+                                    </span>
+                                  ) : null}
+                                </>
+                              )}
+                            </Listbox.Option>
+                          ))}
+                        </Listbox.Options>
+                      </div>
+                    </Listbox>
+                  </div>
+
+                  {/* 刺繍半衿 */}
+                  {shishuHaneri && (
+                    <label className="flex gap-2 items-center cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={selectedShishuHaneri}
+                        onChange={(e) =>
+                          setSelectedShishuHaneri(e.target.checked)
+                        }
+                        className="rounded border-gray-300 size-4 text-primary focus:ring-primary"
+                      />
+                      <span className="text-sm text-gray-700">
+                        刺繍半衿付きに変更（＋¥
+                        {Math.round(shishuHaneriPrice).toLocaleString()}）
+                      </span>
+                    </label>
+                  )}
+
+                  {/* 袴サイズ（袴のみ） */}
+                  {isHakama && (
+                    <div>
+                      <Listbox
+                        value={hakamaSize}
+                        onChange={(v: string) => setHakamaSize(v)}
+                      >
+                        <Listbox.Label className="block mb-1 text-sm font-medium text-gray-900">
+                          袴サイズ
+                          <span className="ml-1 text-red-500">*</span>
+                        </Listbox.Label>
+                        <div className="relative mt-1">
+                          <Listbox.Button className="relative py-2 pr-10 pl-3 w-full text-left bg-white rounded-lg border border-gray-300 shadow-md cursor-default focus:outline-hidden focus:ring-1 focus:ring-primary focus:border-primary sm:text-sm">
+                            <span className="block truncate">
+                              {hakamaSize || '選択してください'}
+                            </span>
+                            <span className="flex absolute inset-y-0 right-0 items-center pr-2 pointer-events-none">
+                              <IconCaret />
+                            </span>
+                          </Listbox.Button>
+                          <Listbox.Options className="overflow-auto absolute z-10 py-1 mt-1 w-full max-h-60 text-base bg-white rounded-md ring-1 ring-black ring-opacity-5 shadow-lg focus:outline-hidden sm:text-sm">
+                            {['S', 'M', 'L', 'LL'].map((size) => (
+                              <Listbox.Option
+                                key={size}
+                                value={size}
+                                className={({active}) =>
+                                  clsx(
+                                    active
+                                      ? 'text-primary bg-primary-light'
+                                      : 'text-gray-900',
+                                    'cursor-default select-none relative py-2 pl-10 pr-4',
+                                  )
+                                }
+                              >
+                                {({selected, active}) => (
+                                  <>
+                                    <span
+                                      className={clsx(
+                                        selected
+                                          ? 'font-medium'
+                                          : 'font-normal',
+                                        'block truncate',
+                                      )}
+                                    >
+                                      {size}
+                                    </span>
+                                    {selected ? (
+                                      <span
+                                        className={clsx(
+                                          active
+                                            ? 'text-primary'
+                                            : 'text-primary-dark',
+                                          'flex absolute inset-y-0 left-0 items-center pl-3',
+                                        )}
+                                      >
+                                        <IconCheck />
+                                      </span>
+                                    ) : null}
+                                  </>
+                                )}
+                              </Listbox.Option>
+                            ))}
+                          </Listbox.Options>
+                        </div>
+                      </Listbox>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* 帯オプション */}
               {isEnableBeltOption && belts && (
                 <div>
                   <p className="block mb-1 text-sm font-medium text-gray-900">
@@ -578,246 +937,156 @@ export function ProductForm({
                 </div>
               )}
 
+              {/* 足袋オプション */}
               {isEnableTabiOption && (
-                <div>
-                  <div className="grid gap-2">
-                    <div>
-                      <Listbox>
+                <div className="grid gap-2">
+                  <div>
+                    <Listbox
+                      value={optionValues.tabiTarget}
+                      onChange={(selectedOption: string) => {
+                        handleOptionChange('tabiTarget', selectedOption);
+                      }}
+                    >
+                      <Listbox.Label className="block mb-1 text-sm font-medium text-gray-900">
+                        足袋
+                      </Listbox.Label>
+                      <div className="relative mt-1">
+                        <Listbox.Button className="relative py-2 pr-10 pl-3 w-full text-left bg-white rounded-lg border border-gray-300 shadow-md cursor-default focus:outline-hidden focus:ring-1 focus:ring-primary focus:border-primary sm:text-sm">
+                          <span className="block truncate">
+                            {optionValues.tabiTarget || '選択してください'}
+                          </span>
+                          <span className="flex absolute inset-y-0 right-0 items-center pr-2 pointer-events-none">
+                            <IconCaret />
+                          </span>
+                        </Listbox.Button>
+                        <Listbox.Options className="overflow-auto absolute z-10 py-1 mt-1 w-full max-h-60 text-base bg-white rounded-md ring-1 ring-black ring-opacity-5 shadow-lg focus:outline-hidden sm:text-sm">
+                          {tabiOptionTargets.map((item) => (
+                            <Listbox.Option
+                              key={item}
+                              value={item}
+                              className={({active}) =>
+                                clsx(
+                                  active
+                                    ? 'text-primary bg-primary-light'
+                                    : 'text-gray-900',
+                                  'cursor-default select-none relative py-2 pl-10 pr-4',
+                                )
+                              }
+                            >
+                              {({selected, active}) => (
+                                <>
+                                  <span
+                                    className={clsx(
+                                      selected ? 'font-medium' : 'font-normal',
+                                      'block truncate',
+                                    )}
+                                  >
+                                    {item}
+                                  </span>
+                                  {selected ? (
+                                    <span
+                                      className={clsx(
+                                        active
+                                          ? 'text-primary'
+                                          : 'text-primary-dark',
+                                        'flex absolute inset-y-0 left-0 items-center pl-3',
+                                      )}
+                                    >
+                                      <IconCheck />
+                                    </span>
+                                  ) : null}
+                                </>
+                              )}
+                            </Listbox.Option>
+                          ))}
+                        </Listbox.Options>
+                      </div>
+                    </Listbox>
+                  </div>
+                  {optionValues.tabiTarget &&
+                    tabiOptionTargets.includes(optionValues.tabiTarget) && (
+                      <div>
                         <Listbox
-                          value={optionValues.tabiTarget}
+                          value={optionValues.tabiSize}
                           onChange={(selectedOption: string) => {
-                            handleOptionChange('tabiTarget', selectedOption);
+                            handleOptionChange('tabiSize', selectedOption);
                           }}
                         >
-                          <Listbox.Label className="block mb-1 text-sm font-medium text-gray-900">
-                            足袋
-                          </Listbox.Label>
                           <div className="relative mt-1">
                             <Listbox.Button className="relative py-2 pr-10 pl-3 w-full text-left bg-white rounded-lg border border-gray-300 shadow-md cursor-default focus:outline-hidden focus:ring-1 focus:ring-primary focus:border-primary sm:text-sm">
                               <span className="block truncate">
-                                {optionValues.tabiTarget || '選択してください'}
+                                {optionValues.tabiSize || '選択してください'}
                               </span>
                               <span className="flex absolute inset-y-0 right-0 items-center pr-2 pointer-events-none">
                                 <IconCaret />
                               </span>
                             </Listbox.Button>
                             <Listbox.Options className="overflow-auto absolute z-10 py-1 mt-1 w-full max-h-60 text-base bg-white rounded-md ring-1 ring-black ring-opacity-5 shadow-lg focus:outline-hidden sm:text-sm">
-                              {tabiOptionTargets.map((item) => (
-                                <Listbox.Option
-                                  key={item}
-                                  value={item}
-                                  className={({active}) =>
-                                    clsx(
-                                      active
-                                        ? 'text-primary bg-primary-light'
-                                        : 'text-gray-900',
-                                      'cursor-default select-none relative py-2 pl-10 pr-4',
-                                    )
-                                  }
-                                >
-                                  {({selected, active}) => (
-                                    <>
-                                      <span
-                                        className={clsx(
-                                          selected
-                                            ? 'font-medium'
-                                            : 'font-normal',
-                                          'block truncate',
-                                        )}
-                                      >
-                                        {item}
-                                      </span>
-                                      {selected ? (
+                              {tabiOptionSizes[optionValues.tabiTarget].map(
+                                (item) => (
+                                  <Listbox.Option
+                                    key={item}
+                                    value={item}
+                                    className={({active}) =>
+                                      clsx(
+                                        active
+                                          ? 'text-primary bg-primary-light'
+                                          : 'text-gray-900',
+                                        'cursor-default select-none relative py-2 pl-10 pr-4',
+                                      )
+                                    }
+                                  >
+                                    {({selected, active}) => (
+                                      <>
                                         <span
                                           className={clsx(
-                                            active
-                                              ? 'text-primary'
-                                              : 'text-primary-dark',
-                                            'flex absolute inset-y-0 left-0 items-center pl-3',
+                                            selected
+                                              ? 'font-medium'
+                                              : 'font-normal',
+                                            'block truncate',
                                           )}
                                         >
-                                          <IconCheck />
+                                          {item}
                                         </span>
-                                      ) : null}
-                                    </>
-                                  )}
-                                </Listbox.Option>
-                              ))}
+                                        {selected ? (
+                                          <span
+                                            className={clsx(
+                                              active
+                                                ? 'text-primary'
+                                                : 'text-primary-dark',
+                                              'flex absolute inset-y-0 left-0 items-center pl-3',
+                                            )}
+                                          >
+                                            <IconCheck />
+                                          </span>
+                                        ) : null}
+                                      </>
+                                    )}
+                                  </Listbox.Option>
+                                ),
+                              )}
                             </Listbox.Options>
                           </div>
                         </Listbox>
-                      </Listbox>
-                    </div>
-                    {optionValues.tabiTarget &&
-                      tabiOptionTargets.includes(optionValues.tabiTarget) && (
-                        <div>
-                          <Listbox>
-                            <Listbox
-                              value={optionValues.tabiSize}
-                              onChange={(selectedOption: string) => {
-                                handleOptionChange('tabiSize', selectedOption);
-                              }}
-                            >
-                              <div className="relative mt-1">
-                                <Listbox.Button className="relative py-2 pr-10 pl-3 w-full text-left bg-white rounded-lg border border-gray-300 shadow-md cursor-default focus:outline-hidden focus:ring-1 focus:ring-primary focus:border-primary sm:text-sm">
-                                  <span className="block truncate">
-                                    {optionValues.tabiSize ||
-                                      '選択してください'}
-                                  </span>
-                                  <span className="flex absolute inset-y-0 right-0 items-center pr-2 pointer-events-none">
-                                    <IconCaret />
-                                  </span>
-                                </Listbox.Button>
-                                <Listbox.Options className="overflow-auto absolute z-10 py-1 mt-1 w-full max-h-60 text-base bg-white rounded-md ring-1 ring-black ring-opacity-5 shadow-lg focus:outline-hidden sm:text-sm">
-                                  {tabiOptionSizes[optionValues.tabiTarget].map(
-                                    (item) => (
-                                      <Listbox.Option
-                                        key={item}
-                                        value={item}
-                                        className={({active}) =>
-                                          clsx(
-                                            active
-                                              ? 'text-primary bg-primary-light'
-                                              : 'text-gray-900',
-                                            'cursor-default select-none relative py-2 pl-10 pr-4',
-                                          )
-                                        }
-                                      >
-                                        {({selected, active}) => (
-                                          <>
-                                            <span
-                                              className={clsx(
-                                                selected
-                                                  ? 'font-medium'
-                                                  : 'font-normal',
-                                                'block truncate',
-                                              )}
-                                            >
-                                              {item}
-                                            </span>
-                                            {selected ? (
-                                              <span
-                                                className={clsx(
-                                                  active
-                                                    ? 'text-primary'
-                                                    : 'text-primary-dark',
-                                                  'flex absolute inset-y-0 left-0 items-center pl-3',
-                                                )}
-                                              >
-                                                <IconCheck />
-                                              </span>
-                                            ) : null}
-                                          </>
-                                        )}
-                                      </Listbox.Option>
-                                    ),
-                                  )}
-                                </Listbox.Options>
-                              </div>
-                            </Listbox>
-                          </Listbox>
-                        </div>
-                      )}
-                  </div>
+                      </div>
+                    )}
                 </div>
               )}
-              <div className="grid gap-2">
-                <div>
-                  <Listbox>
-                    <Listbox.Label className="block mb-1 text-sm font-medium text-gray-900">
-                      ご利用日
-                    </Listbox.Label>
-                    <DatePicker
-                      toggleCalendarOnIconClick
-                      selected={optionValues.startDate}
-                      dateFormat="yyyy/MM/dd"
-                      minDate={minDate}
-                      locale="ja"
-                      onChange={(date) => {
-                        if (!date) return;
-                        handleOptionChange(
-                          'startDate',
-                          date?.toLocaleDateString(),
-                        );
-                      }}
-                    />
-                  </Listbox>
+
+              {/* 合計金額 */}
+              {(selectedAnshinPack || selectedShishuHaneri) && (
+                <div className="flex justify-between items-baseline pt-2 border-t border-gray-200">
+                  <span className="text-sm font-medium text-gray-700">
+                    合計（税込）
+                  </span>
+                  <span className="text-xl font-bold">
+                    ¥{Math.round(totalPrice).toLocaleString()}
+                  </span>
                 </div>
-                <div>
-                  <Listbox>
-                    <Listbox.Label className="block mb-1 text-sm font-medium text-gray-900">
-                      到着日
-                    </Listbox.Label>
-                    {optionValues.deliveryDate.toLocaleDateString()}
-                  </Listbox>
-                </div>
-                <div>
-                  <Listbox
-                    value={optionValues.deliveryTime}
-                    onChange={(selectedOption: string) => {
-                      handleOptionChange('deliveryTime', selectedOption);
-                    }}
-                  >
-                    <Listbox.Label className="block mb-1 text-sm font-medium text-gray-900">
-                      配送時間
-                    </Listbox.Label>
-                    <div className="relative mt-1">
-                      <Listbox.Button className="relative py-2 pr-10 pl-3 w-full text-left bg-white rounded-lg border border-gray-300 shadow-md cursor-default focus:outline-hidden focus:ring-1 focus:ring-primary focus:border-primary sm:text-sm">
-                        <span className="block truncate">
-                          {optionValues.deliveryTime}
-                        </span>
-                        <span className="flex absolute inset-y-0 right-0 items-center pr-2 pointer-events-none">
-                          <IconCaret />
-                        </span>
-                      </Listbox.Button>
-                      <Listbox.Options className="overflow-auto absolute z-10 py-1 mt-1 w-full max-h-60 text-base bg-white rounded-md ring-1 ring-black ring-opacity-5 shadow-lg focus:outline-hidden sm:text-sm">
-                        {sortedDeliverTimeOptions.map((item) => (
-                          <Listbox.Option
-                            key={item}
-                            value={item}
-                            className={({active}) =>
-                              clsx(
-                                active
-                                  ? 'text-primary bg-primary-light'
-                                  : 'text-gray-900',
-                                'cursor-default select-none relative py-2 pl-10 pr-4',
-                              )
-                            }
-                          >
-                            {({selected, active}) => (
-                              <>
-                                <span
-                                  className={clsx(
-                                    selected ? 'font-medium' : 'font-normal',
-                                    'block truncate',
-                                  )}
-                                >
-                                  {item}
-                                </span>
-                                {selected ? (
-                                  <span
-                                    className={clsx(
-                                      active
-                                        ? 'text-primary'
-                                        : 'text-primary-dark',
-                                      'flex absolute inset-y-0 left-0 items-center pl-3',
-                                    )}
-                                  >
-                                    <IconCheck />
-                                  </span>
-                                ) : null}
-                              </>
-                            )}
-                          </Listbox.Option>
-                        ))}
-                      </Listbox.Options>
-                    </div>
-                  </Listbox>
-                </div>
-              </div>
+              )}
             </div>
           </div>
-        )} */}
+        )}
         <VariantSelector
           handle={product.handle}
           options={product.options.filter((option) => option.values.length > 1)}
@@ -1372,3 +1641,58 @@ query TabiOptions {
   }
 }
 ` as const;
+
+const PRODUCT_RENTAL_METAFIELDS_QUERY = `#graphql
+  query ProductRentalMetafields($handle: String!) {
+    product(handle: $handle) {
+      metafields(identifiers: [
+        {namespace: "custom", key: "is_rental"},
+        {namespace: "custom", key: "is_furisode"},
+        {namespace: "custom", key: "is_hakama"},
+        {namespace: "custom", key: "unavailable_dates"}
+      ]) {
+        key
+        value
+      }
+    }
+  }
+` as const;
+
+const RENTAL_OPTIONS_QUERY = `#graphql
+query RentalOptions {
+  anshinPack: products(first: 1, query: "(tag:安心パック) AND (tag:オプション)") {
+    nodes {
+      title
+      variants(first: 1) {
+        nodes {
+          id
+          price {
+            amount
+            currencyCode
+          }
+        }
+      }
+    }
+  }
+  shishuHaneri: products(first: 1, query: "(tag:刺繍半衿) AND (tag:オプション)") {
+    nodes {
+      title
+      variants(first: 1) {
+        nodes {
+          id
+          price {
+            amount
+            currencyCode
+          }
+        }
+      }
+    }
+  }
+}
+` as const;
+
+type RentalOptionProduct = {
+  variantId: string;
+  price: {amount: string; currencyCode: string};
+  title: string;
+};

@@ -41,7 +41,10 @@ export async function loader({
   context: {storefront},
 }: LoaderFunctionArgs) {
   const searchParams = new URL(request.url).searchParams;
-  const searchTerm = searchParams.get('q')!;
+  const rawSearchTerm = searchParams.get('q') ?? '';
+  const searchTerm = rawSearchTerm
+    ? `(${rawSearchTerm}) -tag:オプション`
+    : '-tag:オプション';
   const variables = getPaginationVariables(request, {pageBy: 8});
 
   const {products} = await storefront.query(SEARCH_QUERY, {
@@ -53,7 +56,8 @@ export async function loader({
     },
   });
 
-  const shouldGetRecommendations = !searchTerm || products?.nodes?.length === 0;
+  const shouldGetRecommendations =
+    !rawSearchTerm || products?.nodes?.length === 0;
 
   const seo = seoPayload.collection({
     url: request.url,

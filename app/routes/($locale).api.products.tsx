@@ -21,7 +21,10 @@ export async function loader({
   const url = new URL(request.url);
   const searchParams = new URLSearchParams(url.search);
 
-  const query = searchParams.get('query') ?? '';
+  const rawQuery = searchParams.get('query') ?? '';
+  const query = rawQuery
+    ? `(${rawQuery}) -tag:オプション`
+    : '-tag:オプション';
   const sortKey =
     (searchParams.get('sortKey') as null | ProductSortKeys) ?? 'BEST_SELLING';
 
