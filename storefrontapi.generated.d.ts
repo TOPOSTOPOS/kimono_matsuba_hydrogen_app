@@ -1451,6 +1451,51 @@ export type TabiOptionsQuery = {
   };
 };
 
+export type ProductRentalMetafieldsQueryVariables = StorefrontAPI.Exact<{
+  handle: StorefrontAPI.Scalars['String']['input'];
+}>;
+
+export type ProductRentalMetafieldsQuery = {
+  product?: StorefrontAPI.Maybe<{
+    metafields: Array<
+      StorefrontAPI.Maybe<Pick<StorefrontAPI.Metafield, 'key' | 'value'>>
+    >;
+  }>;
+};
+
+export type RentalOptionsQueryVariables = StorefrontAPI.Exact<{
+  [key: string]: never;
+}>;
+
+export type RentalOptionsQuery = {
+  anshinPack: {
+    nodes: Array<
+      Pick<StorefrontAPI.Product, 'title'> & {
+        variants: {
+          nodes: Array<
+            Pick<StorefrontAPI.ProductVariant, 'id'> & {
+              price: Pick<StorefrontAPI.MoneyV2, 'amount' | 'currencyCode'>;
+            }
+          >;
+        };
+      }
+    >;
+  };
+  shishuHaneri: {
+    nodes: Array<
+      Pick<StorefrontAPI.Product, 'title'> & {
+        variants: {
+          nodes: Array<
+            Pick<StorefrontAPI.ProductVariant, 'id'> & {
+              price: Pick<StorefrontAPI.MoneyV2, 'amount' | 'currencyCode'>;
+            }
+          >;
+        };
+      }
+    >;
+  };
+};
+
 export type AllProductsQueryVariables = StorefrontAPI.Exact<{
   country?: StorefrontAPI.InputMaybe<StorefrontAPI.CountryCode>;
   language?: StorefrontAPI.InputMaybe<StorefrontAPI.LanguageCode>;
@@ -1696,6 +1741,14 @@ interface GeneratedQueryTypes {
   '#graphql\nquery TabiOptions {\n  metaobjects(type: "tabi_option", first: 3) {\n    nodes {\n      fields {\n        key\n        value\n      }\n    }\n  }\n}\n': {
     return: TabiOptionsQuery;
     variables: TabiOptionsQueryVariables;
+  };
+  '#graphql\n  query ProductRentalMetafields($handle: String!) {\n    product(handle: $handle) {\n      metafields(identifiers: [\n        {namespace: "custom", key: "is_rental"},\n        {namespace: "custom", key: "is_furisode"},\n        {namespace: "custom", key: "is_hakama"},\n        {namespace: "custom", key: "unavailable_dates"}\n      ]) {\n        key\n        value\n      }\n    }\n  }\n': {
+    return: ProductRentalMetafieldsQuery;
+    variables: ProductRentalMetafieldsQueryVariables;
+  };
+  '#graphql\nquery RentalOptions {\n  anshinPack: products(first: 1, query: "(tag:安心パック) AND (tag:オプション)") {\n    nodes {\n      title\n      variants(first: 1) {\n        nodes {\n          id\n          price {\n            amount\n            currencyCode\n          }\n        }\n      }\n    }\n  }\n  shishuHaneri: products(first: 1, query: "(tag:刺繍半衿) AND (tag:オプション)") {\n    nodes {\n      title\n      variants(first: 1) {\n        nodes {\n          id\n          price {\n            amount\n            currencyCode\n          }\n        }\n      }\n    }\n  }\n}\n': {
+    return: RentalOptionsQuery;
+    variables: RentalOptionsQueryVariables;
   };
   '#graphql\n  query AllProducts(\n    $country: CountryCode\n    $language: LanguageCode\n    $first: Int\n    $last: Int\n    $startCursor: String\n    $endCursor: String\n  ) @inContext(country: $country, language: $language) {\n    products(first: $first, last: $last, before: $startCursor, after: $endCursor, query: "-tag:帯 AND -tag:オプション") {\n      nodes {\n        ...ProductCard\n      }\n      pageInfo {\n        hasPreviousPage\n        hasNextPage\n        startCursor\n        endCursor\n      }\n    }\n  }\n  #graphql\n  fragment ProductCard on Product {\n    id\n    title\n    publishedAt\n    handle\n    vendor\n    metafield(namespace: "custom", key: "main_collection") {\n      type\n      value\n      reference {\n        ... on Collection {\n          id\n          title\n          handle\n        }\n      }\n    }\n    variants(first: 1) {\n      nodes {\n        id\n        availableForSale\n        image {\n          url\n          altText\n          width\n          height\n        }\n        price {\n          amount\n          currencyCode\n        }\n        compareAtPrice {\n          amount\n          currencyCode\n        }\n        selectedOptions {\n          name\n          value\n        }\n        product {\n          handle\n          title\n        }\n      }\n    }\n  }\n\n': {
     return: AllProductsQuery;
