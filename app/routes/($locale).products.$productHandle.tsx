@@ -328,6 +328,7 @@ export default function Product() {
                     {vendor}
                   </Text>
                 )}
+                <p className="text-xs text-gray-400">{product.handle}</p>
                 <Heading as="h1" className="text-xl! whitespace-normal">
                   {title}
                 </Heading>
@@ -1191,24 +1192,39 @@ export function ProductForm({
                       </Listbox>
                     </div>
                   ) : (
-                    option.values.map(({value, isAvailable, isActive, to}) => (
-                      <Link
-                        key={option.name + value}
-                        to={to}
-                        preventScrollReset
-                        prefetch="intent"
-                        replace
-                        className={clsx(
-                          'p-3 text-sm leading-none rounded-sm transition-all duration-200 cursor-pointer',
-                          isActive
-                            ? 'text-white border-primary/50 bg-primary/90'
-                            : 'border-primary/0',
-                          isAvailable ? 'opacity-100' : 'opacity-50',
-                        )}
-                      >
-                        {value}
-                      </Link>
-                    ))
+                    option.values.map(({value, isAvailable, isActive, to}) => {
+                      const isJanuarySelected =
+                        isFurisode &&
+                        option.name === 'レンタル期間' &&
+                        optionValues.startDate?.getMonth() === 0;
+                      const isLockedOut =
+                        isJanuarySelected && !value.includes('1月');
+                      return isLockedOut ? (
+                        <span
+                          key={option.name + value}
+                          className="p-3 text-sm leading-none rounded-sm opacity-30 cursor-not-allowed border-primary/0"
+                        >
+                          {value}
+                        </span>
+                      ) : (
+                        <Link
+                          key={option.name + value}
+                          to={to}
+                          preventScrollReset
+                          prefetch="intent"
+                          replace
+                          className={clsx(
+                            'p-3 text-sm leading-none rounded-sm transition-all duration-200 cursor-pointer',
+                            isActive
+                              ? 'text-white border-primary/50 bg-primary/90'
+                              : 'border-primary/0',
+                            isAvailable ? 'opacity-100' : 'opacity-50',
+                          )}
+                        >
+                          {value}
+                        </Link>
+                      );
+                    })
                   )}
                 </div>
               </div>
