@@ -8,7 +8,7 @@ import type {
   MetaArgs,
   LoaderFunctionArgs,
 } from '@shopify/remix-oxygen';
-import {useLoaderData, Await, useNavigate} from '@remix-run/react';
+import {useLoaderData, Await, useNavigate, useLocation} from '@remix-run/react';
 import {
   getSeoMeta,
   Money,
@@ -179,19 +179,27 @@ async function loadCriticalData({
       RENTAL_OPTIONS_QUERY,
     );
     const apNode = (rentalOptionsResult as any)?.anshinPack?.nodes?.[0];
-    if (apNode?.variants?.nodes?.[0]) {
+    const apVariant = apNode?.variants?.nodes?.[0];
+    if (apVariant) {
       anshinPack = {
-        variantId: apNode.variants.nodes[0].id,
-        price: apNode.variants.nodes[0].price,
+        variantId: apVariant.id,
+        price: apVariant.availableForSale
+          ? apVariant.price
+          : {amount: '1100', currencyCode: 'JPY'},
         title: apNode.title,
+        availableForSale: apVariant.availableForSale ?? true,
       };
     }
     const shNode = (rentalOptionsResult as any)?.shishuHaneri?.nodes?.[0];
-    if (shNode?.variants?.nodes?.[0]) {
+    const shVariant = shNode?.variants?.nodes?.[0];
+    if (shVariant) {
       shishuHaneri = {
-        variantId: shNode.variants.nodes[0].id,
-        price: shNode.variants.nodes[0].price,
+        variantId: shVariant.id,
+        price: shVariant.availableForSale
+          ? shVariant.price
+          : {amount: '2000', currencyCode: 'JPY'},
         title: shNode.title,
+        availableForSale: shVariant.availableForSale ?? true,
       };
     }
   }
@@ -463,7 +471,7 @@ export function ProductForm({
   registerLocale('ja', ja);
 
   const getRentalNights = (title: string): number => {
-    if (title.includes('1月用')) return 5;
+    if (title.includes('1月')) return 5;
     if (title.includes('下見')) return 1;
     return 3;
   };
@@ -484,7 +492,16 @@ export function ProductForm({
 
   const handleStartDateChange = (date: Date | null) => {
     if (!date) return;
-    const nights = getRentalNights(selectedVariantTitle);
+    const isJanuary = date.getMonth() === 0;
+    if (isFurisode) {
+      const searchParams = new URLSearchParams(location.search);
+      searchParams.set('レンタル期間', isJanuary ? '1月利用（5泊6日）' : '2-12月利用（3泊4日）');
+      navigate(`${location.pathname}?${searchParams.toString()}`, {
+        replace: true,
+        preventScrollReset: true,
+      });
+    }
+    const nights = isJanuary && isFurisode ? 5 : getRentalNights(selectedVariantTitle);
     const end = addDays(date, nights);
     setRangeError(checkRangeHasUnavailable(date, end));
     setOptionValues({...optionValues, startDate: date});
@@ -506,6 +523,7 @@ export function ProductForm({
     selectedVariant?.price?.amount < selectedVariant?.compareAtPrice?.amount;
 
   const navigate = useNavigate();
+  const location = useLocation();
 
   const attributes: AttributeInput[] = [
     {
@@ -1660,12 +1678,13 @@ const PRODUCT_RENTAL_METAFIELDS_QUERY = `#graphql
 
 const RENTAL_OPTIONS_QUERY = `#graphql
 query RentalOptions {
-  anshinPack: products(first: 1, query: "(tag:安心パック) AND (tag:オプション)") {
+  anshinPack: products(first: 1, query: "tag:安心パック") {
     nodes {
       title
       variants(first: 1) {
         nodes {
           id
+          availableForSale
           price {
             amount
             currencyCode
@@ -1674,12 +1693,13 @@ query RentalOptions {
       }
     }
   }
-  shishuHaneri: products(first: 1, query: "(tag:刺繍半衿) AND (tag:オプション)") {
+  shishuHaneri: products(first: 1, query: "tag:刺繍半衿") {
     nodes {
       title
       variants(first: 1) {
         nodes {
           id
+          availableForSale
           price {
             amount
             currencyCode
@@ -1695,4 +1715,5 @@ type RentalOptionProduct = {
   variantId: string;
   price: {amount: string; currencyCode: string};
   title: string;
+  availableForSale: boolean;
 };
