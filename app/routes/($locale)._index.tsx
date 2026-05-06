@@ -15,49 +15,28 @@ import {CategoryMenuGrid} from '~/components/CategoryMenuGrid';
 import type {CategoryMenuData} from '~/components/CategoryMenuGrid';
 import {ProductSwimlane} from '~/components/ProductSwimlane';
 import {RecentlyViewedSwimlane} from '~/components/RecentlyViewedSwimlane';
-import {MEDIA_FRAGMENT, PRODUCT_CARD_FRAGMENT} from '~/data/fragments';
-import {getHeroPlaceholder} from '~/lib/placeholders';
+import {COLLECTION_CONTENT_FRAGMENT, PRODUCT_CARD_FRAGMENT} from '~/data/fragments';
 import {seoPayload} from '~/lib/seo.server';
 import {routeHeaders} from '~/data/cache';
 import {HeroSlider} from '~/components/HeroSlider';
 import {CollectionTopSellingModule} from '~/components/CollectionTopSellingModule';
 import {Nav} from '~/components/Nav';
 import type {RootLoader} from '~/root';
-import type {HomepageHerosQuery} from 'storefrontapi.generated';
 
 /** 開発時のみ: ヒーロースライダー用コレクションデータの切り分けログ */
-function logHomepageHeroDebug(
-  source: 'loader' | 'ui',
-  response: HomepageHerosQuery | null | undefined,
-) {
-  if (!import.meta.env.DEV || !response?.collections?.nodes) {
-    return;
-  }
-  const nodes = response.collections.nodes;
+function logHomepageHeroDebug(source: 'loader' | 'ui', response: unknown) {
+  if (!import.meta.env.DEV) return;
+
+  const nodes =
+    (response as any)?.metaobjects?.nodes?.[0]?.slides?.references?.nodes ?? [];
   // eslint-disable-next-line no-console
   console.groupCollapsed(
-    `[HeroDebug:${source}] homepageHeros: API は ${nodes.length} 件（first:${HOMEPAGE_HERO_COLLECTIONS_FETCH_FIRST}, UPDATED_AT）`,
+    `[HeroDebug:${source}] homepageHeros: ${nodes.length} 件（metaobject: homepage_hero）`,
   );
   for (const c of nodes) {
-    const ref = c.spread?.reference as {__typename?: string} | null | undefined;
     // eslint-disable-next-line no-console
-    console.log(c.handle, {
-      title: c.title?.slice(0, 40),
-      hasSpreadReference: Boolean(ref),
-      spreadRefTypename: ref?.__typename ?? null,
-      heroTitle: c.heading?.value ? 'set' : 'empty',
-      heroByline: c.byline?.value ? 'set' : 'empty',
-      heroCta: c.cta?.value ? 'set' : 'empty',
-    });
+    console.log(c.handle, {title: c.title?.slice(0, 40)});
   }
-  const passed = nodes
-    .filter((c) => Boolean(c.spread?.reference))
-    .slice(0, HOMEPAGE_HERO_SLIDES_MAX);
-  // eslint-disable-next-line no-console
-  console.log(
-    `[HeroDebug:${source}] spread.reference あり → 最大 ${HOMEPAGE_HERO_SLIDES_MAX} 件で HeroSlider へ ${passed.length} 件`,
-    passed.map((c) => c.handle),
-  );
   // eslint-disable-next-line no-console
   console.groupEnd();
 }
@@ -71,13 +50,7 @@ export const HOMEPAGE_COLLECTION_TOP_SELLING_HANDLE = 'all';
 
 export const HOMEPAGE_COLLECTION_HOUMONGI_HANDLE = 'houmongi';
 
-/**
- * ヒーロー候補として Storefront から取るコレクション数（更新が新しい順）。
- * first: 8 だけだと spread 未設定の新規ばかりになりやすいので多めに取り、下記 MAX で絞る。
- */
-export const HOMEPAGE_HERO_COLLECTIONS_FETCH_FIRST = 50;
-
-/** スライダーに載せる最大枚数（spread ありのものからこの件数まで） */
+/** スライダーに載せる最大枚数 */
 export const HOMEPAGE_HERO_SLIDES_MAX = 8;
 
 export const headers = routeHeaders;
@@ -181,7 +154,6 @@ function loadDeferredData({context}: LoaderFunctionArgs) {
       variables: {
         country,
         language,
-        heroCollectionsFirst: HOMEPAGE_HERO_COLLECTIONS_FETCH_FIRST,
       },
     })
     .then((data) => {
@@ -219,19 +191,17 @@ export default function Homepage() {
   const rootData = useRouteLoaderData<RootLoader>('root');
   const collectionNav = rootData?.layout?.collectionNav;
 
-  // TODO: skeletons vs placeholders
-  const skeletons = getHeroPlaceholder([{}, {}, {}]);
-
   return (
     <>
       {heros && (
         <Suspense fallback={<div>Loading...</div>}>
           <Await resolve={heros}>
-            {(response: HomepageHerosQuery | null) => {
+            {(response: unknown) => {
               logHomepageHeroDebug('ui', response ?? undefined);
-              const heroNodes = (response?.collections?.nodes ?? [])
-                .filter((collection) => Boolean(collection?.spread?.reference))
-                .slice(0, HOMEPAGE_HERO_SLIDES_MAX);
+
+              const heroNodes =
+                (response as any)?.metaobjects?.nodes?.[0]?.slides?.references
+                  ?.nodes ?? [];
               return (
                 <HeroSlider
                   heros={heroNodes}
@@ -404,34 +374,6 @@ function BuyOrRentTabs() {
   );
 }
 
-const COLLECTION_CONTENT_FRAGMENT = `#graphql
-  fragment CollectionContent on Collection {
-    id
-    handle
-    title
-    descriptionHtml
-    heading: metafield(namespace: "hero", key: "title") {
-      value
-    }
-    byline: metafield(namespace: "hero", key: "byline") {
-      value
-    }
-    cta: metafield(namespace: "hero", key: "cta") {
-      value
-    }
-    spread: metafield(namespace: "hero", key: "spread") {
-      reference {
-        ...Media
-      }
-    }
-    spreadSecondary: metafield(namespace: "hero", key: "spread_secondary") {
-      reference {
-        ...Media
-      }
-    }
-  }
-  ${MEDIA_FRAGMENT}
-` as const;
 
 const HOMEPAGE_SEO_QUERY = `#graphql
   query seoCollectionContent($handle: String, $country: CountryCode, $language: LanguageCode)
@@ -448,11 +390,19 @@ const HOMEPAGE_SEO_QUERY = `#graphql
 ` as const;
 
 const HOMEPAGE_HEROS_QUERY = `#graphql
-  query homepageHeros($country: CountryCode, $language: LanguageCode, $heroCollectionsFirst: Int!)
+  query homepageHeros($country: CountryCode, $language: LanguageCode)
   @inContext(country: $country, language: $language) {
-    collections(first: $heroCollectionsFirst, sortKey: UPDATED_AT) {
+    metaobjects(type: "homepage_hero", first: 1) {
       nodes {
-        ...CollectionContent
+        slides: field(key: "slides") {
+          references(first: ${HOMEPAGE_HERO_SLIDES_MAX}) {
+            nodes {
+              ... on Collection {
+                ...CollectionContent
+              }
+            }
+          }
+        }
       }
     }
   }
