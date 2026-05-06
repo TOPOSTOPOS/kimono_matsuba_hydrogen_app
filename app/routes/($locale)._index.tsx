@@ -15,21 +15,16 @@ import {CategoryMenuGrid} from '~/components/CategoryMenuGrid';
 import type {CategoryMenuData} from '~/components/CategoryMenuGrid';
 import {ProductSwimlane} from '~/components/ProductSwimlane';
 import {RecentlyViewedSwimlane} from '~/components/RecentlyViewedSwimlane';
-import {MEDIA_FRAGMENT, PRODUCT_CARD_FRAGMENT} from '~/data/fragments';
-import {getHeroPlaceholder} from '~/lib/placeholders';
+import {COLLECTION_CONTENT_FRAGMENT, PRODUCT_CARD_FRAGMENT} from '~/data/fragments';
 import {seoPayload} from '~/lib/seo.server';
 import {routeHeaders} from '~/data/cache';
 import {HeroSlider} from '~/components/HeroSlider';
 import {CollectionTopSellingModule} from '~/components/CollectionTopSellingModule';
 import {Nav} from '~/components/Nav';
 import type {RootLoader} from '~/root';
-import type {HomepageHerosQuery} from 'storefrontapi.generated';
 
 /** 開発時のみ: ヒーロースライダー用コレクションデータの切り分けログ */
-function logHomepageHeroDebug(
-  source: 'loader' | 'ui',
-  response: HomepageHerosQuery | null | undefined,
-) {
+function logHomepageHeroDebug(source: 'loader' | 'ui', response: unknown) {
   if (!import.meta.env.DEV) return;
 
   const nodes =
@@ -196,15 +191,12 @@ export default function Homepage() {
   const rootData = useRouteLoaderData<RootLoader>('root');
   const collectionNav = rootData?.layout?.collectionNav;
 
-  // TODO: skeletons vs placeholders
-  const skeletons = getHeroPlaceholder([{}, {}, {}]);
-
   return (
     <>
       {heros && (
         <Suspense fallback={<div>Loading...</div>}>
           <Await resolve={heros}>
-            {(response: HomepageHerosQuery | null) => {
+            {(response: unknown) => {
               logHomepageHeroDebug('ui', response ?? undefined);
 
               const heroNodes =
@@ -382,34 +374,6 @@ function BuyOrRentTabs() {
   );
 }
 
-const COLLECTION_CONTENT_FRAGMENT = `#graphql
-  fragment CollectionContent on Collection {
-    id
-    handle
-    title
-    descriptionHtml
-    heading: metafield(namespace: "hero", key: "title") {
-      value
-    }
-    byline: metafield(namespace: "hero", key: "byline") {
-      value
-    }
-    cta: metafield(namespace: "hero", key: "cta") {
-      value
-    }
-    spread: metafield(namespace: "hero", key: "spread") {
-      reference {
-        ...Media
-      }
-    }
-    spreadSecondary: metafield(namespace: "hero", key: "spread_secondary") {
-      reference {
-        ...Media
-      }
-    }
-  }
-  ${MEDIA_FRAGMENT}
-` as const;
 
 const HOMEPAGE_SEO_QUERY = `#graphql
   query seoCollectionContent($handle: String, $country: CountryCode, $language: LanguageCode)
