@@ -85,6 +85,7 @@ type SpreadMediaProps = {
 };
 
 function SpreadMedia({data, loading, sizes, className}: SpreadMediaProps) {
+  if (!data) return null;
   return (
     <MediaFile
       data={data}

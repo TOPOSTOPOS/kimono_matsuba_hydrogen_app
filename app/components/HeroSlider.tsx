@@ -1,15 +1,9 @@
-import {useEffect, useRef, useState} from 'react';
+import {useRef, useState} from 'react';
 import {Splide, SplideSlide} from '@splidejs/react-splide';
 
 import type {CollectionContentFragment} from 'storefrontapi.generated';
-import useIsPhone from '~/hooks/usePhone';
 
 import {Hero} from './Hero';
-
-// モジュールレベルのフラグ。
-// HMR で HeroSlider 以外のファイルが変わった場合、このモジュールは再ロードされないので
-// true のまま保たれ、再マウント時に即座に Splide を描画できる。
-let isClientReady = false;
 
 type HeroSliderProps = {
   heros: CollectionContentFragment[];
@@ -18,62 +12,43 @@ type HeroSliderProps = {
   loading?: HTMLImageElement['loading'];
 };
 
+// Splide の loop type は center focus + padding 構成で最低4枚必要
+const LOOP_MIN_SLIDES = 4;
+
 export function HeroSlider({heros, height, loading, top}: HeroSliderProps) {
-  const isMobile = useIsPhone();
+  const useLoop = heros.length >= LOOP_MIN_SLIDES;
   const heroSplideOptions = {
-    type: 'loop' as const,
+    type: useLoop ? ('loop' as const) : ('slide' as const),
+    rewind: !useLoop,
     perPage: 1,
     perMove: 1,
     focus: 'center' as const,
-    padding: isMobile
-      ? {left: '10%', right: '10%'}
-      : {left: '30%', right: '30%'},
+    padding: {left: '30%', right: '30%'},
     gap: '1rem',
     arrows: true,
     pagination: false,
     drag: true,
     autoplay: true,
     breakpoints: {
+      640: {
+        padding: {left: '10%', right: '10%'},
+      },
       768: {
         arrows: false,
       },
     },
   };
-  // SSR は false、クライアント初回も false → useEffect で true にする。
-  // HMR で他ファイルが変わった場合は isClientReady が true のまま残るため、
-  // useState(isClientReady) により即座に true で初期化され、フリッカーなし。
-  const [ready, setReady] = useState(isClientReady);
 
   const splideRef = useRef<{
     splide?: {go: (control: number | string) => void};
   } | null>(null);
   const [activeIndex, setActiveIndex] = useState<number>(0);
 
-  useEffect(() => {
-    if (!isClientReady) {
-      isClientReady = true;
-      setReady(true);
-    }
-  }, []);
-
-  useEffect(() => {
-    if (!import.meta.env.DEV) return;
-    // eslint-disable-next-line no-console
-    console.log('[HeroDebug:HeroSlider]', {
-      herosCount: heros.length,
-      ready,
-      willRenderSplide: ready && heros.length > 0,
-    });
-  }, [heros.length, ready]);
-
   const handleSlideChange = (_splide: unknown, newIndex: number) => {
     setActiveIndex(newIndex);
   };
 
   if (!heros.length) return null;
-
-  // SSR およびクライアント初回ハイドレーション時は何も返さない（ハイドレーション不一致を防ぐ）
-  if (!ready) return null;
 
   return (
     <>
