@@ -1,4 +1,3 @@
-'use client';
 import {useEffect, useState} from 'react';
 
 const useIsPhone = () => {
@@ -6,7 +5,7 @@ const useIsPhone = () => {
   useEffect(() => {
     setIsMobile(window.innerWidth < 640);
   }, []);
-  return window.innerWidth < 640;
+  return isMobile;
 };
 
 export default useIsPhone;

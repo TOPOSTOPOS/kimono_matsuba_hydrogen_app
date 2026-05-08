@@ -15,10 +15,14 @@ import {CategoryMenuGrid} from '~/components/CategoryMenuGrid';
 import type {CategoryMenuData} from '~/components/CategoryMenuGrid';
 import {ProductSwimlane} from '~/components/ProductSwimlane';
 import {RecentlyViewedSwimlane} from '~/components/RecentlyViewedSwimlane';
-import {COLLECTION_CONTENT_FRAGMENT, PRODUCT_CARD_FRAGMENT} from '~/data/fragments';
+import {
+  COLLECTION_CONTENT_FRAGMENT,
+  PRODUCT_CARD_FRAGMENT,
+} from '~/data/fragments';
 import {seoPayload} from '~/lib/seo.server';
 import {routeHeaders} from '~/data/cache';
 import {HeroSlider} from '~/components/HeroSlider';
+import {ClientOnly} from '~/components/ClientOnly';
 import {CollectionTopSellingModule} from '~/components/CollectionTopSellingModule';
 import {Nav} from '~/components/Nav';
 import type {RootLoader} from '~/root';
@@ -82,17 +86,29 @@ export async function loader(args: LoaderFunctionArgs) {
  * needed to render the page. If it's unavailable, the whole page should 400 or 500 error.
  */
 async function loadCriticalData({context}: LoaderFunctionArgs) {
-  const [{shop, hero}] = await Promise.all([
+  const {language, country} = context.storefront.i18n;
+  const [{shop, hero}, herosData] = await Promise.all([
     context.storefront.query(HOMEPAGE_SEO_QUERY, {
       variables: {handle: 'all'},
     }),
-    // Add other queries here, so that they are loaded in parallel
+    context.storefront
+      .query(HOMEPAGE_HEROS_QUERY, {variables: {country, language}})
+      .catch(() => null),
   ]);
+
+  const heroNodes =
+    (herosData as any)?.metaobjects?.nodes?.[0]?.slides?.references?.nodes ??
+    [];
+
+  if (import.meta.env.DEV) {
+    logHomepageHeroDebug('loader', herosData);
+  }
 
   return {
     shop,
     primaryHero: hero,
     seo: seoPayload.home(),
+    heroNodes,
   };
 }
 
@@ -149,32 +165,7 @@ function loadDeferredData({context}: LoaderFunctionArgs) {
       return null;
     });
 
-  const heros = context.storefront
-    .query(HOMEPAGE_HEROS_QUERY, {
-      variables: {
-        country,
-        language,
-      },
-    })
-    .then((data) => {
-      logHomepageHeroDebug('loader', data);
-      return data;
-    })
-    .catch((error) => {
-      // Log query errors, but don't throw them so the page can still render
-      // eslint-disable-next-line no-console
-      console.error(error);
-      if (import.meta.env.DEV) {
-        // eslint-disable-next-line no-console
-        console.warn(
-          '[HeroDebug:loader] homepageHeros クエリ失敗 → HeroSlider 非表示',
-        );
-      }
-      return null;
-    });
-
   return {
-    heros,
     featuredProducts,
     featuredCollections,
     categoryMenus,
@@ -186,33 +177,19 @@ export const meta = ({matches}: MetaArgs<typeof loader>) => {
 };
 
 export default function Homepage() {
-  const {heros, featuredCollections, featuredProducts, categoryMenus} =
+  const {heroNodes, featuredCollections, featuredProducts, categoryMenus} =
     useLoaderData<typeof loader>();
   const rootData = useRouteLoaderData<RootLoader>('root');
   const collectionNav = rootData?.layout?.collectionNav;
 
   return (
     <>
-      {heros && (
-        <Suspense fallback={<div>Loading...</div>}>
-          <Await resolve={heros}>
-            {(response: unknown) => {
-              logHomepageHeroDebug('ui', response ?? undefined);
-
-              const heroNodes =
-                (response as any)?.metaobjects?.nodes?.[0]?.slides?.references
-                  ?.nodes ?? [];
-              return (
-                <HeroSlider
-                  heros={heroNodes}
-                  height="full"
-                  top
-                  loading="eager"
-                />
-              );
-            }}
-          </Await>
-        </Suspense>
+      {heroNodes.length > 0 && (
+        <ClientOnly>
+          {() => (
+            <HeroSlider heros={heroNodes} height="full" top loading="eager" />
+          )}
+        </ClientOnly>
       )}
       <BuyOrRentTabs />
       <div className="flex justify-between mx-auto mt-9 w-full sm:pt-10 max-w-245 pb-15">
@@ -373,7 +350,6 @@ function BuyOrRentTabs() {
     </div>
   );
 }
-
 
 const HOMEPAGE_SEO_QUERY = `#graphql
   query seoCollectionContent($handle: String, $country: CountryCode, $language: LanguageCode)
