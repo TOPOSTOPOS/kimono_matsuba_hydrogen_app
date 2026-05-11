@@ -42,9 +42,7 @@ export async function loader({
 }: LoaderFunctionArgs) {
   const searchParams = new URL(request.url).searchParams;
   const rawSearchTerm = searchParams.get('q') ?? '';
-  const searchTerm = rawSearchTerm
-    ? `(${rawSearchTerm}) -tag:オプション`
-    : '-tag:オプション';
+  const searchTerm = rawSearchTerm ? `(${rawSearchTerm})` : '';
   const variables = getPaginationVariables(request, {pageBy: 8});
 
   const {products} = await storefront.query(SEARCH_QUERY, {
@@ -200,10 +198,6 @@ function NoResults({
 
             return (
               <div className="mt-12">
-                <FeaturedCollections
-                  title="人気のコレクション"
-                  collections={featuredCollections}
-                />
                 <ProductSwimlane
                   title="人気の商品"
                   products={featuredProducts}
