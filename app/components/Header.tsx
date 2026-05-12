@@ -205,7 +205,7 @@ function MobileHeader({
       role="banner"
       className={`${
         isHome
-          ? 'text-black bg-white dark:text-primary shadow-darkHeader'
+          ? 'text-black bg-white shadow-darkHeader'
           : 'text-primary'
       } flex lg:hidden items-center sticky backdrop-blur-lg z-40 top-0 justify-between w-full leading-none gap-4 px-4 md:px-8`}
     >
@@ -230,7 +230,7 @@ function MobileHeader({
           <Input
             className={
               isHome
-                ? 'focus:border-contrast/20 dark:focus:border-primary/20'
+                ? 'focus:border-contrast/20'
                 : 'focus:border-primary/20'
             }
             type="search"
@@ -284,7 +284,7 @@ function DesktopHeader({
       <header
         role="banner"
         className={`bg-[#D7D2EB] shadow-sm ${
-          isHome ? 'text-black dark:text-primary' : 'text-primary'
+          isHome ? 'text-black' : 'text-primary'
         } ${
           !isHome && y > 50 && ' shadow-lightHeader'
         } hidden lg:flex lg:flex-col items-end sticky transition duration-300 backdrop-blur-lg z-40 top-0 justify-between w-full leading-none gap-4 py-4 `}
@@ -315,7 +315,7 @@ function DesktopHeader({
               <Input
                 className={
                   isHome
-                    ? 'focus:border-contrast/20 dark:focus:border-primary/20'
+                    ? 'focus:border-contrast/20'
                     : 'focus:border-primary/20'
                 }
                 type="search"
@@ -421,7 +421,7 @@ function Badge({
         <div
           className={`${
             dark
-              ? 'text-primary bg-contrast dark:text-contrast dark:bg-primary'
+              ? 'text-primary bg-contrast'
               : 'text-contrast bg-primary'
           } absolute bottom-1 right-1 text-[0.625rem] font-medium subpixel-antialiased h-3 min-w-3 flex items-center justify-center leading-none text-center rounded-full w-auto px-0.5 pb-px`}
         >

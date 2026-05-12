@@ -74,7 +74,7 @@ export default function Policies() {
         <div className="grow w-full md:w-7/12">
           <div
             dangerouslySetInnerHTML={{__html: policy.body}}
-            className="prose dark:prose-invert"
+            className="prose"
           />
         </div>
       </Section>

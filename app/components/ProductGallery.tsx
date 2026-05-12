@@ -89,7 +89,7 @@ export function ProductGallery({
 
   return (
     <div className={className}>
-      <div className="overflow-hidden relative w-full bg-white rounded-none! aspect-square card-image dark:bg-contrast/10">
+      <div className="overflow-hidden relative w-full bg-white rounded-none! aspect-square card-image">
         {visual.kind === 'hydrogen' ? (
           <Image
             loading="eager"
@@ -142,7 +142,7 @@ export function ProductGallery({
                 aria-label={`画像 ${i + 1} を表示`}
                 aria-current={selected ? 'true' : undefined}
                 onClick={() => setActiveIndex(i)}
-                className={`overflow-hidden relative bg-white shrink-0 size-16 dark:bg-contrast/10`}
+                className={`overflow-hidden relative bg-white shrink-0 size-16`}
               >
                 <img
                   src={thumbUrl}

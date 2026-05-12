@@ -1317,7 +1317,7 @@ function ProductDetail({
 
       <div className={'grid gap-2 pt-2 pb-4'}>
         <div
-          className="text-sm prose dark:prose-invert"
+          className="text-sm prose"
           dangerouslySetInnerHTML={{__html: content}}
         />
         {learnMore && (
@@ -1364,7 +1364,7 @@ function ProductDetailDisclosure({
 
           <Disclosure.Panel className={'grid gap-2 pt-2 pb-4'}>
             <div
-              className="prose dark:prose-invert"
+              className="prose"
               dangerouslySetInnerHTML={{__html: content}}
             />
             {learnMore && (
