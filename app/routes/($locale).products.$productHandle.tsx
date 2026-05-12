@@ -174,7 +174,7 @@ async function loadCriticalData({
   let anshinPack: RentalOptionProduct | null = null;
   let shishuHaneri: RentalOptionProduct | null = null;
 
-  if (isFurisode || isHakama) {
+  if (isRental) {
     const rentalOptionsResult = await context.storefront.query(
       RENTAL_OPTIONS_QUERY,
     );
@@ -190,17 +190,20 @@ async function loadCriticalData({
         availableForSale: apVariant.availableForSale ?? true,
       };
     }
-    const shNode = (rentalOptionsResult as any)?.shishuHaneri?.nodes?.[0];
-    const shVariant = shNode?.variants?.nodes?.[0];
-    if (shVariant) {
-      shishuHaneri = {
-        variantId: shVariant.id,
-        price: shVariant.availableForSale
-          ? shVariant.price
-          : {amount: '2000', currencyCode: 'JPY'},
-        title: shNode.title,
-        availableForSale: shVariant.availableForSale ?? true,
-      };
+    // 刺繍半衿は振袖・袴のみ
+    if (isFurisode || isHakama) {
+      const shNode = (rentalOptionsResult as any)?.shishuHaneri?.nodes?.[0];
+      const shVariant = shNode?.variants?.nodes?.[0];
+      if (shVariant) {
+        shishuHaneri = {
+          variantId: shVariant.id,
+          price: shVariant.availableForSale
+            ? shVariant.price
+            : {amount: '2000', currencyCode: 'JPY'},
+          title: shNode.title,
+          availableForSale: shVariant.availableForSale ?? true,
+        };
+      }
     }
   }
 
@@ -319,8 +322,8 @@ export default function Product() {
     <div className="bg-white">
       <Section className="px-0 mx-auto w-full md:px-8 lg:px-12 md:max-w-245">
         <div className="grid items-start mt-9 md:gap-6 lg:gap-20 md:grid-cols-2 lg:grid-cols-2">
-          <ProductGallery media={media.nodes} className="w-full basis-1/2" />
-          <div className="basis-1/2">
+          <ProductGallery media={media.nodes} className="w-full min-w-0" />
+          <div className="min-w-0">
             <section className="flex flex-col gap-8 p-6 w-full sm:pt-0 md:mx-auto md:px-0">
               <div className="grid gap-2">
                 {vendor && (
@@ -377,7 +380,7 @@ export default function Product() {
         </div>
       </Section>
       <div className="bg-[#fafaf9] mt-12 md:mt-20">
-        <Section padding="x" className="mx-auto max-w-245">
+        <Section padding="x" className="!px-0 mx-auto max-w-245">
           <Suspense fallback={<Skeleton className="h-32" />}>
             <Await
               errorElement="There was a problem loading related products"
@@ -496,13 +499,17 @@ export function ProductForm({
     const isJanuary = date.getMonth() === 0;
     if (isFurisode) {
       const searchParams = new URLSearchParams(location.search);
-      searchParams.set('レンタル期間', isJanuary ? '1月利用（5泊6日）' : '2-12月利用（3泊4日）');
+      searchParams.set(
+        'レンタル期間',
+        isJanuary ? '1月利用（5泊6日）' : '2-12月利用（3泊4日）',
+      );
       navigate(`${location.pathname}?${searchParams.toString()}`, {
         replace: true,
         preventScrollReset: true,
       });
     }
-    const nights = isJanuary && isFurisode ? 5 : getRentalNights(selectedVariantTitle);
+    const nights =
+      isJanuary && isFurisode ? 5 : getRentalNights(selectedVariantTitle);
     const end = addDays(date, nights);
     setRangeError(checkRangeHasUnavailable(date, end));
     setOptionValues({...optionValues, startDate: date});
@@ -586,7 +593,7 @@ export function ProductForm({
     (isEnableTabiOption &&
       (!optionValues.tabiTarget || !optionValues.tabiSize)) ||
     (isEnableBeltOption && selectedBelts.length === 0) ||
-    ((isFurisode || isHakama) && !zooriSize) ||
+    (isRental && !zooriSize) ||
     (isHakama && !hakamaSize) ||
     rangeError
   ) {
@@ -744,8 +751,8 @@ export function ProductForm({
                 )}
               </div>
 
-              {/* 振袖・袴オプション */}
-              {(isFurisode || isHakama) && (
+              {/* レンタルオプション */}
+              {isRental && (
                 <div className="grid gap-3 p-3 bg-gray-50 rounded-lg">
                   <p className="text-sm font-medium text-gray-900">
                     オプション
