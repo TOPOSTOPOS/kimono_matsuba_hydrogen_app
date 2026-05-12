@@ -60,13 +60,13 @@ export function CountrySelector() {
       </Heading>
       <div className="relative">
         <details
-          className="absolute w-full border border-primary/30 dark:border-white overflow-clip sm-max:static"
+          className="absolute w-full border border-primary/30 overflow-clip sm-max:static"
           ref={closeRef}
         >
           <summary className="flex items-center justify-between w-full px-4 py-3 cursor-pointer">
             {selectedLocale.label}
           </summary>
-          <div className="w-full overflow-auto border-t border-contrast/30 dark:border-white bg-contrast/30 max-h-36">
+          <div className="w-full overflow-auto border-t border-contrast/30 bg-contrast/30 max-h-36">
             {countries &&
               Object.keys(countries).map((countryPath) => {
                 const countryLocale = countries[countryPath];
@@ -118,8 +118,8 @@ function Country({
     >
       <Button
         className={clsx([
-          'text-primary dark:text-contrast',
-          'bg-contrast dark:bg-primary w-full p-2 transition flex justify-start',
+          'text-primary',
+          'bg-contrast w-full p-2 transition flex justify-start',
           'items-center text-left cursor-pointer py-2 px-4',
         ])}
         type="submit"

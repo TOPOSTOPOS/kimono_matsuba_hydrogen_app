@@ -37,7 +37,7 @@ export function Footer({
       as="footer"
       role="contentinfo"
       display="flex"
-      className={`overflow-hidden gap-6 justify-between items-start px-6! py-8! pt-10! mx-auto mt-9 w-full bg-[#D7D2EB] pb-15! min-h-100 md:px-0! lg:px-12! md:gap-8 lg:gap-12 md:grid-cols-2 lg:grid-cols-${itemsCount} dark:bg-contrast dark:text-primary text-contrast`}
+      className={`overflow-hidden gap-6 justify-between items-start px-6! py-8! pt-10! mx-auto mt-9 w-full bg-[#D7D2EB] pb-15! min-h-100 md:px-0! lg:px-12! md:gap-8 lg:gap-12 md:grid-cols-2 lg:grid-cols-${itemsCount} text-contrast`}
     >
       <div className="flex flex-col gap-6 mx-auto w-full max-w-245">
         <Nav collectionNav={collectionNav} isFooter />

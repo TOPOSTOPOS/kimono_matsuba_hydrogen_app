@@ -48,7 +48,7 @@ export function Hero({
             loading={loading}
           />
         </div>
-        <div className="flex absolute bottom-0 left-0 flex-col gap-2 justify-between items-baseline px-3 py-5 w-full bg-linear-to-t sm:gap-4 sm:px-6 md:px-8 dark:from-contrast/60 dark:text-primary from-primary/60 text-contrast">
+        <div className="flex absolute bottom-0 left-0 flex-col gap-2 justify-between items-baseline px-3 py-5 w-full bg-linear-to-t sm:gap-4 sm:px-6 md:px-8 from-primary/60 text-contrast">
           {heading?.value && (
             <Heading
               format
