@@ -1,4 +1,3 @@
-import clsx from 'clsx';
 import {useEffect, useId, useMemo} from 'react';
 import {useFetcher} from '@remix-run/react';
 import type {
@@ -7,7 +6,7 @@ import type {
 } from '@shopify/hydrogen/storefront-api-types';
 
 import type {ProductCardFragment} from 'storefrontapi.generated';
-import {Heading, Text} from '~/components/Text';
+import {Heading, Section, Text} from '~/components/Text';
 import {ProductCard} from '~/components/ProductCard';
 import {Skeleton} from '~/components/Skeleton';
 import {usePrefixPathWithLocale} from '~/lib/utils';
@@ -59,23 +58,15 @@ export function FeaturedProducts({
   }, [load, productsApiPath]);
 
   return (
-    <>
-      <Heading format size="copy" className="t-4">
-        {heading}
-      </Heading>
-      <div
-        className={clsx([
-          `grid grid-cols-2 gap-x-6 gap-y-8`,
-          layout === 'page' ? 'md:grid-cols-4 sm:grid-col-4' : '',
-        ])}
-      >
+    <Section heading={heading} padding="swimlane">
+      <div className="swimlane hiddenScroll md:pb-8 md:scroll-px-8 lg:scroll-px-12 md:px-0 lg:px-0">
         <FeatureProductsContent
           count={count}
           onClick={onClose}
           products={data?.products}
         />
       </div>
-    </>
+    </Section>
   );
 }
 
@@ -97,7 +88,7 @@ function FeatureProductsContent({
     return (
       <>
         {[...new Array(count)].map((_, i) => (
-          <div key={`${id + i}`} className="grid gap-2">
+          <div key={`${id + i}`} className="grid gap-2 snap-start w-48">
             <Skeleton className="aspect-3/4" />
             <Skeleton className="w-32 h-4" />
           </div>
@@ -117,7 +108,7 @@ function FeatureProductsContent({
           product={product as ProductCardFragment}
           key={product.id}
           onClick={onClick}
-          quickAdd
+          className="snap-start w-48"
         />
       ))}
     </>

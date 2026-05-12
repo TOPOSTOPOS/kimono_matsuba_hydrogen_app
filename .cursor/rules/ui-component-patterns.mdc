@@ -1,0 +1,47 @@
+---
+description: UIコンポーネントのパターン（型定義・横スクロールレイアウト）
+globs: app/components/**/*.tsx
+alwaysApply: false
+---
+
+# UIコンポーネントのパターン
+
+## storefrontapi.generated の型を使う
+
+`storefrontapi.generated` の型名は自動生成されるため、存在しない型名を使わないこと。
+
+```tsx
+// ❌ BAD: 存在しない型名
+import type {HomepageFeaturedCollectionsQuery} from 'storefrontapi.generated';
+
+// ✅ GOOD: 実際に生成された型から必要な部分を取り出す
+import type {FeaturedItemsQuery} from 'storefrontapi.generated';
+
+type Props = {
+  collections: FeaturedItemsQuery['featuredCollections'];
+};
+```
+
+型名が不明な場合は `storefrontapi.generated.d.ts` を参照すること。
+
+## 横スクロール（スイムレーン）レイアウト
+
+商品・コレクションの横スクロールリストは `ProductSwimlane` と同じパターンを使う。
+
+```tsx
+// ✅ GOOD: swimlane パターン（ProductSwimlane と統一）
+<Section heading={title} padding="swimlane">
+  <div className="swimlane hiddenScroll md:pb-8 md:scroll-px-8 lg:scroll-px-12 md:px-0 lg:px-0">
+    {items.map((item) => (
+      <SomeCard key={item.id} className="snap-start w-48" />
+    ))}
+  </div>
+</Section>
+
+// ❌ BAD: swimlane に md: オーバーライドを重ねてグリッドに戻そうとする
+<div className="swimlane md:grid-flow-row md:overflow-x-visible ...">
+```
+
+- 各アイテムには必ず `snap-start w-48` を付与する
+- skeleton（ローディング）にも同じ `snap-start w-48` を付与する
+- `Section` には `padding="swimlane"` を指定する

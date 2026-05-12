@@ -103,9 +103,9 @@ function CartDiscounts({
     <>
       {/* Have existing discount, display it with a remove option */}
       <dl className={codes && codes.length !== 0 ? 'grid' : 'hidden'}>
-        <div className="flex items-center justify-between font-medium">
+        <div className="flex justify-between items-center font-medium">
           <Text as="dt">ディスカウント</Text>
-          <div className="flex items-center justify-between">
+          <div className="flex justify-between items-center">
             <UpdateDiscountForm>
               <button>
                 <IconRemove
@@ -124,7 +124,7 @@ function CartDiscounts({
         <div
           className={clsx(
             'flex',
-            'items-center gap-4 justify-between text-copy',
+            'gap-4 justify-between items-center text-copy',
           )}
         >
           <input
@@ -255,7 +255,7 @@ function CartSummary({
         注文内容
       </h2>
       <dl className="grid">
-        <div className="flex items-center justify-between font-medium">
+        <div className="flex justify-between items-center font-medium">
           <Text as="dt">小計</Text>
           <Text as="dd" data-test="subtotal">
             {cost?.subtotalAmount?.amount ? (
@@ -307,7 +307,7 @@ function CartLineItem({line}: {line: CartLine}) {
             width={110}
             height={110}
             data={merchandise.image}
-            className="object-cover object-center w-24 h-24 border rounded-sm md:w-28 md:h-28"
+            className="object-cover object-center w-24 h-24 rounded-sm border md:w-28 md:h-28"
             alt={merchandise.title}
           />
         )}
@@ -341,7 +341,7 @@ function CartLineItem({line}: {line: CartLine}) {
             ))}
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex gap-2 items-center">
             <div className="flex justify-start text-copy">
               <CartLineQuantityAdjust line={line} />
             </div>
@@ -366,7 +366,7 @@ function ItemRemoveButton({lineId}: {lineId: CartLine['id']}) {
       }}
     >
       <button
-        className="flex items-center justify-center w-10 h-10 border rounded-sm"
+        className="flex justify-center items-center w-10 h-10 rounded-sm border"
         type="submit"
       >
         <span className="sr-only">Remove</span>
@@ -394,7 +394,7 @@ function CartLineQuantityAdjust({line}: {line: CartLine}) {
       <label htmlFor={`quantity-${lineId}`} className="sr-only">
         Quantity, {optimisticQuantity}
       </label>
-      <div className="flex items-center border rounded-sm">
+      <div className="flex items-center rounded-sm border">
         <UpdateCartButton lines={[{id: lineId, quantity: prevQuantity}]}>
           <button
             name="decrease-quantity"
@@ -502,23 +502,27 @@ export function CartEmpty({
 
   return (
     <div ref={scrollRef} className={container[layout]} hidden={hidden}>
-      <section className="grid gap-6">
-        <Text format>
-          Looks like you haven&rsquo;t added anything yet, let&rsquo;s get you
-          started!
+      <section className="grid gap-6 text-center">
+        <Text className="mx-auto" format>
+          カートに商品がありません。
         </Text>
         <div>
-          <Button onClick={onClose}>Continue shopping</Button>
+          <Button
+            className="inline-block px-6 py-3 font-medium text-center rounded-sm bg-[#643e84] text-contrast"
+            onClick={onClose}
+          >
+            商品を探す
+          </Button>
         </div>
       </section>
-      <section className="grid gap-8 pt-16">
+      <section className="grid gap-4 mx-auto w-full border-none max-w-187 md:gap-8 md:p-0 lg:p-0">
         <FeaturedProducts
           count={4}
-          heading="Shop Best Sellers"
+          heading="人気の商品"
           layout={layout}
           onClose={onClose}
           sortKey="BEST_SELLING"
-          query="-tag:帯 AND -tag:オプション"
+          // query="-tag:帯 AND -tag:オプション"
         />
       </section>
     </div>

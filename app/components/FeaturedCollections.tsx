@@ -1,13 +1,13 @@
 import {Image} from '@shopify/hydrogen';
 
-import type {HomepageFeaturedCollectionsQuery} from 'storefrontapi.generated';
+import type {FeaturedItemsQuery} from 'storefrontapi.generated';
 import {Heading, Section} from '~/components/Text';
-import {Grid} from '~/components/Grid';
 import {Link} from '~/components/Link';
 
-type FeaturedCollectionsProps = HomepageFeaturedCollectionsQuery & {
+type FeaturedCollectionsProps = {
+  collections: FeaturedItemsQuery['featuredCollections'];
   title?: string;
-  [key: string]: any;
+  [key: string]: unknown;
 };
 
 export function FeaturedCollections({
@@ -21,11 +21,15 @@ export function FeaturedCollections({
   const collectionsWithImage = collections.nodes.filter((item) => item.image);
 
   return (
-    <Section {...props} heading={title}>
-      <Grid items={collectionsWithImage.length}>
+    <Section {...props} heading={title} padding="swimlane">
+      <div className="swimlane hiddenScroll md:pb-8 md:scroll-px-8 lg:scroll-px-12 md:px-0 lg:px-0">
         {collectionsWithImage.map((collection) => {
           return (
-            <Link key={collection.id} to={`/collections/${collection.handle}`}>
+            <Link
+              key={collection.id}
+              to={`/collections/${collection.handle}`}
+              className="snap-start w-48"
+            >
               <div className="grid gap-4">
                 <div className="card-image bg-primary/5 aspect-3/2">
                   {collection?.image && (
@@ -42,7 +46,7 @@ export function FeaturedCollections({
             </Link>
           );
         })}
-      </Grid>
+      </div>
     </Section>
   );
 }
