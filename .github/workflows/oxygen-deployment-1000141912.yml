@@ -22,7 +22,7 @@ jobs:
           node-version-file: ".nvmrc"
 
       - name: Install dependencies
-        run: npm install
+        run: npm ci --include=optional
 
       - name: Build and Publish to Oxygen
         run: npx shopify hydrogen deploy --force
