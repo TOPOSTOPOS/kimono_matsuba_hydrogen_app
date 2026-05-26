@@ -763,7 +763,7 @@ export function ProductForm({
 
               {/* レンタルオプション */}
               {isRental && (
-                <div className="grid gap-3 p-3 bg-gray-50 rounded-lg">
+                <div className="grid gap-3 p-4 bg-gray-50 rounded-lg">
                   <p className="text-sm font-medium text-gray-900">
                     オプション
                   </p>
