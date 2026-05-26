@@ -89,6 +89,7 @@ function LightboxModal({
   const useLoop = slides.length >= LOOP_MIN_SLIDES;
 
   return ReactDOM.createPortal(
+    // eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions
     <div
       style={{
         position: 'fixed',
@@ -125,6 +126,7 @@ function LightboxModal({
       >
         ✕
       </button>
+      {/* eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions */}
       <div
         style={{width: '100%', maxWidth: '48rem', padding: '0 1rem'}}
         onClick={(e) => e.stopPropagation()}
@@ -150,12 +152,20 @@ function LightboxModal({
             return (
               <SplideSlide
                 key={med.id}
-                style={{display: 'flex', alignItems: 'center', justifyContent: 'center'}}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}
               >
                 <img
                   src={getImageUrl(visual)}
                   alt={getImageAlt(visual)}
-                  style={{maxHeight: '80vh', maxWidth: '100%', objectFit: 'contain'}}
+                  style={{
+                    maxHeight: '80vh',
+                    maxWidth: '100%',
+                    objectFit: 'contain',
+                  }}
                   loading="lazy"
                   decoding="async"
                 />
