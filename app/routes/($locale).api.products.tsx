@@ -22,9 +22,7 @@ export async function loader({
   const searchParams = new URLSearchParams(url.search);
 
   const rawQuery = searchParams.get('query') ?? '';
-  const query = rawQuery
-    ? `(${rawQuery}) -tag:オプション`
-    : '-tag:オプション';
+  const query = rawQuery ? `(${rawQuery}) -tag:オプション` : '-tag:オプション';
   const sortKey =
     (searchParams.get('sortKey') as null | ProductSortKeys) ?? 'BEST_SELLING';
 

@@ -204,9 +204,7 @@ function MobileHeader({
     <header
       role="banner"
       className={`${
-        isHome
-          ? 'text-black bg-white shadow-darkHeader'
-          : 'text-primary'
+        isHome ? 'text-black bg-white shadow-darkHeader' : 'text-primary'
       } flex lg:hidden items-center sticky backdrop-blur-lg z-40 top-0 justify-between w-full leading-none gap-4 px-4 md:px-8`}
     >
       <div className="flex gap-2 justify-start items-center w-full">
@@ -229,9 +227,7 @@ function MobileHeader({
           </button>
           <Input
             className={
-              isHome
-                ? 'focus:border-contrast/20'
-                : 'focus:border-primary/20'
+              isHome ? 'focus:border-contrast/20' : 'focus:border-primary/20'
             }
             type="search"
             variant="minisearch"
@@ -420,9 +416,7 @@ function Badge({
         <IconBag />
         <div
           className={`${
-            dark
-              ? 'text-primary bg-contrast'
-              : 'text-contrast bg-primary'
+            dark ? 'text-primary bg-contrast' : 'text-contrast bg-primary'
           } absolute bottom-1 right-1 text-[0.625rem] font-medium subpixel-antialiased h-3 min-w-3 flex items-center justify-center leading-none text-center rounded-full w-auto px-0.5 pb-px`}
         >
           <span>{count || 0}</span>

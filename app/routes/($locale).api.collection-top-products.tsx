@@ -61,7 +61,9 @@ export async function loader({
       title: data.collection.title,
       products: {
         nodes: (
-          data.collection.products.nodes as Array<{tags: string[]} & (typeof data.collection.products.nodes)[number]>
+          data.collection.products.nodes as Array<
+            {tags: string[]} & (typeof data.collection.products.nodes)[number]
+          >
         ).filter((p) => !p.tags.includes('オプション')),
       },
     },
