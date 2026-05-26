@@ -26,11 +26,13 @@ import {ja} from 'date-fns/locale/ja';
 import type {
   AttributeInput,
   CartLineInput,
+  ProductOption,
   SelectedOption,
 } from '@shopify/hydrogen/storefront-api-types';
 import Hashids from 'hashids';
 
 import type {
+  MetafieldFragment,
   ProductQuery,
   ProductVariantFragmentFragment,
 } from 'storefrontapi.generated';
@@ -143,7 +145,8 @@ async function loadCriticalData({
 
   const isEnableBeltOption =
     product.metafields.find(
-      (metafield) => metafield?.key === 'is_enable_belt_option',
+      (metafield: MetafieldFragment) =>
+        metafield?.key === 'is_enable_belt_option',
     )?.value === 'true';
 
   // 振袖・袴フラグと不可日は別クエリで取得（PRODUCT_QUERY の型生成を壊さないため）
@@ -174,21 +177,27 @@ async function loadCriticalData({
   let anshinPack: RentalOptionProduct | null = null;
   let shishuHaneri: RentalOptionProduct | null = null;
 
+  const isEnableAnshinPack = product.tags.some((tag: string) =>
+    tag.includes('安心パック'),
+  );
+
   if (isRental) {
     const rentalOptionsResult = await context.storefront.query(
       RENTAL_OPTIONS_QUERY,
     );
-    const apNode = (rentalOptionsResult as any)?.anshinPack?.nodes?.[0];
-    const apVariant = apNode?.variants?.nodes?.[0];
-    if (apVariant) {
-      anshinPack = {
-        variantId: apVariant.id,
-        price: apVariant.availableForSale
-          ? apVariant.price
-          : {amount: '1100', currencyCode: 'JPY'},
-        title: apNode.title,
-        availableForSale: apVariant.availableForSale ?? true,
-      };
+    if (isEnableAnshinPack) {
+      const apNode = (rentalOptionsResult as any)?.anshinPack?.nodes?.[0];
+      const apVariant = apNode?.variants?.nodes?.[0];
+      if (apVariant) {
+        anshinPack = {
+          variantId: apVariant.id,
+          price: apVariant.availableForSale
+            ? apVariant.price
+            : {amount: '1100', currencyCode: 'JPY'},
+          title: apNode.title,
+          availableForSale: apVariant.availableForSale ?? true,
+        };
+      }
     }
     // 刺繍半衿は振袖・袴のみ
     if (isFurisode || isHakama) {
@@ -439,7 +448,8 @@ export function ProductForm({
   currentDate.setDate(currentDate.getDate() + 13);
   const minDate = currentDate;
   const isEnableTabiOptionMetafield = product.metafields.find(
-    (metafield) => metafield?.key === 'is_enable_tabi_option',
+    (metafield: MetafieldFragment) =>
+      metafield?.key === 'is_enable_tabi_option',
   );
   const isEnableTabiOption = isEnableTabiOptionMetafield?.value === 'true';
 
@@ -1115,7 +1125,9 @@ export function ProductForm({
         )}
         <VariantSelector
           handle={product.handle}
-          options={product.options.filter((option) => option.values.length > 1)}
+          options={product.options.filter(
+            (option: ProductOption) => option.values.length > 1,
+          )}
           variants={variants}
         >
           {({option}) => {
@@ -1509,7 +1521,7 @@ const PRODUCT_QUERY = `#graphql
       selectedVariant: variantBySelectedOptions(selectedOptions: $selectedOptions, ignoreUnknownOptions: true, caseInsensitiveMatch: true) {
         ...ProductVariantFragment
       }
-      media(first: 7) {
+      media(first: 50) {
         nodes {
           ...Media
         }
