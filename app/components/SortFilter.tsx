@@ -202,8 +202,12 @@ function getSortLink(
   params: URLSearchParams,
   location: Location,
 ) {
-  params.set('sort', sort);
-  return `${location.pathname}?${params.toString()}`;
+  const newParams = new URLSearchParams(params);
+  newParams.set('sort', sort);
+  // ソート変更時は古いカーソルをクリアしないとAPIエラーになる
+  newParams.delete('cursor');
+  newParams.delete('direction');
+  return `${location.pathname}?${newParams.toString()}`;
 }
 
 function getFilterLink(
@@ -328,7 +332,9 @@ export default function SortMenu() {
   ];
   const [params] = useSearchParams();
   const location = useLocation();
-  const activeItem = items.find((item) => item.key === params.get('sort'));
+  const activeItem =
+    items.find((item) => item.key === params.get('sort')) ??
+    items.find((item) => item.key === 'newest');
 
   return (
     <Menu as="div" className="relative z-40">
