@@ -26,13 +26,11 @@ import {ja} from 'date-fns/locale/ja';
 import type {
   AttributeInput,
   CartLineInput,
-  ProductOption,
   SelectedOption,
 } from '@shopify/hydrogen/storefront-api-types';
 import Hashids from 'hashids';
 
 import type {
-  MetafieldFragment,
   ProductQuery,
   ProductVariantFragmentFragment,
 } from 'storefrontapi.generated';
@@ -145,8 +143,7 @@ async function loadCriticalData({
 
   const isEnableBeltOption =
     product.metafields.find(
-      (metafield: MetafieldFragment) =>
-        metafield?.key === 'is_enable_belt_option',
+      (metafield) => metafield?.key === 'is_enable_belt_option',
     )?.value === 'true';
 
   // 振袖・袴フラグと不可日は別クエリで取得（PRODUCT_QUERY の型生成を壊さないため）
@@ -448,8 +445,7 @@ export function ProductForm({
   currentDate.setDate(currentDate.getDate() + 13);
   const minDate = currentDate;
   const isEnableTabiOptionMetafield = product.metafields.find(
-    (metafield: MetafieldFragment) =>
-      metafield?.key === 'is_enable_tabi_option',
+    (metafield) => metafield?.key === 'is_enable_tabi_option',
   );
   const isEnableTabiOption = isEnableTabiOptionMetafield?.value === 'true';
 
@@ -603,7 +599,7 @@ export function ProductForm({
     (isEnableTabiOption &&
       (!optionValues.tabiTarget || !optionValues.tabiSize)) ||
     (isEnableBeltOption && selectedBelts.length === 0) ||
-    (isRental && !zooriSize) ||
+    ((isFurisode || isHakama) && !zooriSize) ||
     (isHakama && !hakamaSize) ||
     rangeError
   ) {
@@ -762,7 +758,7 @@ export function ProductForm({
               </div>
 
               {/* レンタルオプション */}
-              {isRental && (
+              {isRental && (anshinPack || isFurisode || isHakama) && (
                 <div className="grid gap-3 p-4 bg-gray-50 rounded-lg">
                   <p className="text-sm font-medium text-gray-900">
                     オプション
@@ -786,69 +782,73 @@ export function ProductForm({
                     </label>
                   )}
 
-                  {/* 草履サイズ */}
-                  <div>
-                    <Listbox
-                      value={zooriSize}
-                      onChange={(v: string) => setZooriSize(v)}
-                    >
-                      <Listbox.Label className="block mb-1 text-sm font-medium text-gray-900">
-                        草履サイズ
-                        <span className="ml-1 text-red-500">*</span>
-                      </Listbox.Label>
-                      <div className="relative mt-1">
-                        <Listbox.Button className="relative py-2 pr-10 pl-3 w-full text-left bg-white rounded-lg border border-gray-300 shadow-md cursor-default focus:outline-hidden focus:ring-1 focus:ring-primary focus:border-primary sm:text-sm">
-                          <span className="block truncate">
-                            {zooriSize || '選択してください'}
-                          </span>
-                          <span className="flex absolute inset-y-0 right-0 items-center pr-2 pointer-events-none">
-                            <IconCaret />
-                          </span>
-                        </Listbox.Button>
-                        <Listbox.Options className="overflow-auto absolute z-10 py-1 mt-1 w-full max-h-60 text-base bg-white rounded-md ring-1 ring-black ring-opacity-5 shadow-lg focus:outline-hidden sm:text-sm">
-                          {['M', 'L', 'LL'].map((size) => (
-                            <Listbox.Option
-                              key={size}
-                              value={size}
-                              className={({active}) =>
-                                clsx(
-                                  active
-                                    ? 'text-primary bg-primary-light'
-                                    : 'text-gray-900',
-                                  'cursor-default select-none relative py-2 pl-10 pr-4',
-                                )
-                              }
-                            >
-                              {({selected, active}) => (
-                                <>
-                                  <span
-                                    className={clsx(
-                                      selected ? 'font-medium' : 'font-normal',
-                                      'block truncate',
-                                    )}
-                                  >
-                                    {size}
-                                  </span>
-                                  {selected ? (
+                  {/* 草履サイズ（振袖・袴のみ） */}
+                  {(isFurisode || isHakama) && (
+                    <div>
+                      <Listbox
+                        value={zooriSize}
+                        onChange={(v: string) => setZooriSize(v)}
+                      >
+                        <Listbox.Label className="block mb-1 text-sm font-medium text-gray-900">
+                          草履サイズ
+                          <span className="ml-1 text-red-500">*</span>
+                        </Listbox.Label>
+                        <div className="relative mt-1">
+                          <Listbox.Button className="relative py-2 pr-10 pl-3 w-full text-left bg-white rounded-lg border border-gray-300 shadow-md cursor-default focus:outline-hidden focus:ring-1 focus:ring-primary focus:border-primary sm:text-sm">
+                            <span className="block truncate">
+                              {zooriSize || '選択してください'}
+                            </span>
+                            <span className="flex absolute inset-y-0 right-0 items-center pr-2 pointer-events-none">
+                              <IconCaret />
+                            </span>
+                          </Listbox.Button>
+                          <Listbox.Options className="overflow-auto absolute z-10 py-1 mt-1 w-full max-h-60 text-base bg-white rounded-md ring-1 ring-black ring-opacity-5 shadow-lg focus:outline-hidden sm:text-sm">
+                            {['M', 'L', 'LL'].map((size) => (
+                              <Listbox.Option
+                                key={size}
+                                value={size}
+                                className={({active}) =>
+                                  clsx(
+                                    active
+                                      ? 'text-primary bg-primary-light'
+                                      : 'text-gray-900',
+                                    'cursor-default select-none relative py-2 pl-10 pr-4',
+                                  )
+                                }
+                              >
+                                {({selected, active}) => (
+                                  <>
                                     <span
                                       className={clsx(
-                                        active
-                                          ? 'text-primary'
-                                          : 'text-primary-dark',
-                                        'flex absolute inset-y-0 left-0 items-center pl-3',
+                                        selected
+                                          ? 'font-medium'
+                                          : 'font-normal',
+                                        'block truncate',
                                       )}
                                     >
-                                      <IconCheck />
+                                      {size}
                                     </span>
-                                  ) : null}
-                                </>
-                              )}
-                            </Listbox.Option>
-                          ))}
-                        </Listbox.Options>
-                      </div>
-                    </Listbox>
-                  </div>
+                                    {selected ? (
+                                      <span
+                                        className={clsx(
+                                          active
+                                            ? 'text-primary'
+                                            : 'text-primary-dark',
+                                          'flex absolute inset-y-0 left-0 items-center pl-3',
+                                        )}
+                                      >
+                                        <IconCheck />
+                                      </span>
+                                    ) : null}
+                                  </>
+                                )}
+                              </Listbox.Option>
+                            ))}
+                          </Listbox.Options>
+                        </div>
+                      </Listbox>
+                    </div>
+                  )}
 
                   {/* 刺繍半衿 */}
                   {shishuHaneri && (
@@ -1125,9 +1125,7 @@ export function ProductForm({
         )}
         <VariantSelector
           handle={product.handle}
-          options={product.options.filter(
-            (option: ProductOption) => option.values.length > 1,
-          )}
+          options={product.options.filter((option) => option.values.length > 1)}
           variants={variants}
         >
           {({option}) => {

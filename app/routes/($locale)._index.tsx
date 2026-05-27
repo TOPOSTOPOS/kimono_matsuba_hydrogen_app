@@ -27,32 +27,13 @@ import {CollectionTopSellingModule} from '~/components/CollectionTopSellingModul
 import {Nav} from '~/components/Nav';
 import type {RootLoader} from '~/root';
 
-/** 開発時のみ: ヒーロースライダー用コレクションデータの切り分けログ */
-function logHomepageHeroDebug(source: 'loader' | 'ui', response: unknown) {
-  if (!import.meta.env.DEV) return;
-
-  const nodes =
-    (response as any)?.metaobjects?.nodes?.[0]?.slides?.references?.nodes ?? [];
-  // eslint-disable-next-line no-console
-  console.groupCollapsed(
-    `[HeroDebug:${source}] homepageHeros: ${nodes.length} 件（metaobject: homepage_hero）`,
-  );
-  for (const c of nodes) {
-    // eslint-disable-next-line no-console
-    console.log(c.handle, {title: c.title?.slice(0, 40)});
-  }
-  // eslint-disable-next-line no-console
-  console.groupEnd();
-}
-
-/** 買う / 借りる タブのリンク先コレクションハンドル */
 export const BUY_COLLECTION_HANDLE = 'buy';
 export const RENT_COLLECTION_HANDLE = 'rental';
 
 /** トップに売れ筋ブロックを出すコレクションハンドル（空なら非表示） */
 export const HOMEPAGE_COLLECTION_TOP_SELLING_HANDLE = 'all';
 
-export const HOMEPAGE_COLLECTION_HOUMONGI_HANDLE = 'houmongi';
+export const HOMEPAGE_COLLECTION_HOUMONGI_HANDLE = 'furisode-rental';
 
 /** スライダーに載せる最大枚数 */
 export const HOMEPAGE_HERO_SLIDES_MAX = 8;
@@ -99,10 +80,6 @@ async function loadCriticalData({context}: LoaderFunctionArgs) {
   const heroNodes =
     (herosData as any)?.metaobjects?.nodes?.[0]?.slides?.references?.nodes ??
     [];
-
-  if (import.meta.env.DEV) {
-    logHomepageHeroDebug('loader', herosData);
-  }
 
   return {
     shop,
@@ -232,27 +209,9 @@ export default function Homepage() {
             />
           ) : null}
 
-          {featuredCollections && (
-            <Suspense>
-              <Await resolve={featuredCollections}>
-                {(response) => {
-                  if (
-                    !response ||
-                    !response?.collections ||
-                    !response?.collections?.nodes
-                  ) {
-                    return <></>;
-                  }
-                  return (
-                    <FeaturedCollections
-                      collections={response.collections}
-                      title="すべてのカテゴリ"
-                    />
-                  );
-                }}
-              </Await>
-            </Suspense>
-          )}
+          <div className="grid grid-cols-2 gap-4 px-6 sm:px-0">
+            <h2 className="text-xl font-bold">すべてのカテゴリ</h2>
+          </div>
 
           {categoryMenus && (
             <Suspense>
