@@ -29,7 +29,7 @@ export function ProductSwimlane({
 
   return (
     <Section heading={title} padding="y" {...props}>
-      <div className="swimlane hiddenScroll md:pb-8 md:scroll-px-8 lg:scroll-px-12">
+      <div className="swimlane hiddenScroll md:pb-8 md:scroll-px-8 lg:scroll-px-12 md:px-0 lg:px-0">
         {visible.map((product) => (
           <ProductCard
             product={product}
