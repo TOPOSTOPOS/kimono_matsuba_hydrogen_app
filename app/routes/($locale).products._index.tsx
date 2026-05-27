@@ -88,7 +88,15 @@ export default function AllProducts() {
         />
         <Section>
           <Pagination connection={products}>
-            {({nodes, isLoading, PreviousLink, NextLink, nextPageUrl, hasNextPage, state}) => (
+            {({
+              nodes,
+              isLoading,
+              PreviousLink,
+              NextLink,
+              nextPageUrl,
+              hasNextPage,
+              state,
+            }) => (
               <>
                 <div className="flex justify-center items-center mb-6">
                   <Button as={PreviousLink} variant="secondary" width="full">
@@ -103,7 +111,12 @@ export default function AllProducts() {
                   state={state}
                 />
                 <div className="flex justify-center items-center mt-6">
-                  <Button ref={ref} as={NextLink} variant="secondary" width="full">
+                  <Button
+                    ref={ref}
+                    as={NextLink}
+                    variant="secondary"
+                    width="full"
+                  >
                     {isLoading ? 'Loading...' : 'Load more products'}
                   </Button>
                 </div>
