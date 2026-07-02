@@ -44,6 +44,7 @@ import {ProductGallery} from '~/components/ProductGallery';
 import {IconCaret, IconCheck, IconClose} from '~/components/Icon';
 import {getExcerpt} from '~/lib/utils';
 import {seoPayload} from '~/lib/seo.server';
+import {getPreviewProduct, isValidPreviewRequest} from '~/lib/admin.server';
 import type {Storefront} from '~/lib/type';
 import {routeHeaders} from '~/data/cache';
 import {MEDIA_FRAGMENT, PRODUCT_CARD_FRAGMENT} from '~/data/fragments';
@@ -63,6 +64,14 @@ export async function loader(args: LoaderFunctionArgs) {
   // Await the critical data required to render initial state of the page
   const criticalData = await loadCriticalData(args);
 
+  // 下書きプレビュー時は Storefront の deferred variants が空になるため、
+  // Admin から取得した全バリアントで差し替える（VARIANTS_QUERY と同じ形）。
+  if (criticalData.isPreview && criticalData.previewVariants) {
+    (deferredData as any).variants = Promise.resolve({
+      product: {variants: {nodes: criticalData.previewVariants}},
+    });
+  }
+
   return defer({...deferredData, ...criticalData});
 }
 
@@ -80,21 +89,41 @@ async function loadCriticalData({
 
   const selectedOptions = getSelectedProductOptions(request);
 
-  const [{shop, product}, deliverTimeOptions, cart, tabiOptions] =
-    await Promise.all([
-      context.storefront.query(PRODUCT_QUERY, {
-        variables: {
-          handle: productHandle,
-          selectedOptions,
-          country: context.storefront.i18n.country,
-          language: context.storefront.i18n.language,
-        },
-      }),
-      context.storefront.query(DELIVERY_TIME_OPTIONS_QUERY),
-      context.cart.get(),
-      context.storefront.query(TABI_OPTIONS_QUERY),
-      // Add other queries here, so that they are loaded in parallel
-    ]);
+  const [
+    {shop, product: fetchedProduct},
+    deliverTimeOptions,
+    cart,
+    tabiOptions,
+  ] = await Promise.all([
+    context.storefront.query(PRODUCT_QUERY, {
+      variables: {
+        handle: productHandle,
+        selectedOptions,
+        country: context.storefront.i18n.country,
+        language: context.storefront.i18n.language,
+      },
+    }),
+    context.storefront.query(DELIVERY_TIME_OPTIONS_QUERY),
+    context.cart.get(),
+    context.storefront.query(TABI_OPTIONS_QUERY),
+    // Add other queries here, so that they are loaded in parallel
+  ]);
+
+  // 下書き（Draft）商品プレビュー: Storefront では取得できないため、
+  // 有効なプレビュートークンがある場合のみ Admin API から取得して差し替える。
+  let product: any = fetchedProduct;
+  let previewProduct: Awaited<ReturnType<typeof getPreviewProduct>> = null;
+  const isPreview = isValidPreviewRequest(request, context.env);
+  if (!product?.id && isPreview) {
+    previewProduct = await getPreviewProduct(
+      context.env,
+      productHandle,
+      selectedOptions,
+    );
+    if (previewProduct) {
+      product = previewProduct.product;
+    }
+  }
 
   const sortedDeliverTimeOptions = deliverTimeOptions.metaobjects.nodes
     .sort((a, b) => {
@@ -143,14 +172,17 @@ async function loadCriticalData({
 
   const isEnableBeltOption =
     product.metafields.find(
-      (metafield) => metafield?.key === 'is_enable_belt_option',
+      (metafield: {key: string; value: string} | null) =>
+        metafield?.key === 'is_enable_belt_option',
     )?.value === 'true';
 
   // 振袖・袴フラグと不可日は別クエリで取得（PRODUCT_QUERY の型生成を壊さないため）
   const [rentalMetafieldsResult, beltResult] = await Promise.all([
-    context.storefront.query(PRODUCT_RENTAL_METAFIELDS_QUERY, {
-      variables: {handle: productHandle},
-    }),
+    previewProduct
+      ? Promise.resolve(previewProduct.rentalMetafields)
+      : context.storefront.query(PRODUCT_RENTAL_METAFIELDS_QUERY, {
+          variables: {handle: productHandle},
+        }),
     isEnableBeltOption ? getBeltOptions(context.storefront) : null,
   ]);
 
@@ -164,6 +196,10 @@ async function loadCriticalData({
     rentalMetafields.find((m) => m?.key === 'is_furisode')?.value === 'true';
   const isHakama =
     rentalMetafields.find((m) => m?.key === 'is_hakama')?.value === 'true';
+  const isTomesode =
+    rentalMetafields.find((m) => m?.key === 'is_tomesode')?.value === 'true';
+  const isHoumongi =
+    rentalMetafields.find((m) => m?.key === 'is_houmongi')?.value === 'true';
   const unavailableDatesRaw = rentalMetafields.find(
     (m) => m?.key === 'unavailable_dates',
   )?.value;
@@ -257,9 +293,13 @@ async function loadCriticalData({
     isRental,
     isFurisode,
     isHakama,
+    isTomesode,
+    isHoumongi,
     unavailableDates,
     anshinPack,
     shishuHaneri,
+    isPreview: Boolean(previewProduct),
+    previewVariants: previewProduct?.variantsNodes ?? null,
   };
 }
 
@@ -313,7 +353,7 @@ function redirectToFirstVariant({
 }
 
 export default function Product() {
-  const {product, shop, recommended, variants, cart} =
+  const {product, shop, recommended, variants, cart, isPreview} =
     useLoaderData<typeof loader>();
   const {media, title, vendor, descriptionHtml} = product;
   const {shippingPolicy, refundPolicy} = shop;
@@ -326,6 +366,11 @@ export default function Product() {
 
   return (
     <div className="bg-white">
+      {isPreview && (
+        <div className="px-4 py-2 text-sm font-medium text-center text-yellow-900 bg-yellow-100 border-b border-yellow-300">
+          🔍 これは下書き商品のプレビューです（一般には公開されていません）
+        </div>
+      )}
       <Section className="px-0 mx-auto w-full md:px-8 lg:px-12 md:max-w-245">
         <div className="grid items-start mt-9 md:gap-6 lg:gap-20 md:grid-cols-2 lg:grid-cols-2">
           <ProductGallery media={media.nodes} className="w-full min-w-0" />
@@ -436,16 +481,22 @@ export function ProductForm({
     isRental,
     isFurisode,
     isHakama,
+    isTomesode,
+    isHoumongi,
     unavailableDates,
     anshinPack,
     shishuHaneri,
   } = useLoaderData<typeof loader>();
 
+  // 草履サイズを表示する着物種別（振袖・袴・留袖・訪問着）
+  const showZooriSize = isFurisode || isHakama || isTomesode || isHoumongi;
+
   const currentDate = new Date();
   currentDate.setDate(currentDate.getDate() + 13);
   const minDate = currentDate;
   const isEnableTabiOptionMetafield = product.metafields.find(
-    (metafield) => metafield?.key === 'is_enable_tabi_option',
+    (metafield: {key: string; value: string} | null) =>
+      metafield?.key === 'is_enable_tabi_option',
   );
   const isEnableTabiOption = isEnableTabiOptionMetafield?.value === 'true';
 
@@ -599,7 +650,7 @@ export function ProductForm({
     (isEnableTabiOption &&
       (!optionValues.tabiTarget || !optionValues.tabiSize)) ||
     (isEnableBeltOption && selectedBelts.length === 0) ||
-    ((isFurisode || isHakama) && !zooriSize) ||
+    (showZooriSize && !zooriSize) ||
     (isHakama && !hakamaSize) ||
     rangeError
   ) {
@@ -758,7 +809,7 @@ export function ProductForm({
               </div>
 
               {/* レンタルオプション */}
-              {isRental && (anshinPack || isFurisode || isHakama) && (
+              {isRental && (anshinPack || showZooriSize) && (
                 <div className="grid gap-3 p-4 bg-gray-50 rounded-lg">
                   <p className="text-sm font-medium text-gray-900">
                     オプション
@@ -782,8 +833,8 @@ export function ProductForm({
                     </label>
                   )}
 
-                  {/* 草履サイズ（振袖・袴のみ） */}
-                  {(isFurisode || isHakama) && (
+                  {/* 草履サイズ（振袖・袴・留袖・訪問着） */}
+                  {showZooriSize && (
                     <div>
                       <Listbox
                         value={zooriSize}
@@ -1125,7 +1176,10 @@ export function ProductForm({
         )}
         <VariantSelector
           handle={product.handle}
-          options={product.options.filter((option) => option.values.length > 1)}
+          options={product.options.filter(
+            (option: {name: string; values: string[]}) =>
+              option.values.length > 1,
+          )}
           variants={variants}
         >
           {({option}) => {
@@ -1700,6 +1754,8 @@ const PRODUCT_RENTAL_METAFIELDS_QUERY = `#graphql
         {namespace: "custom", key: "is_rental"},
         {namespace: "custom", key: "is_furisode"},
         {namespace: "custom", key: "is_hakama"},
+        {namespace: "custom", key: "is_tomesode"},
+        {namespace: "custom", key: "is_houmongi"},
         {namespace: "custom", key: "unavailable_dates"}
       ]) {
         key

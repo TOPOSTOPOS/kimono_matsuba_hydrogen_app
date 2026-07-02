@@ -28,6 +28,9 @@ declare global {
     PUBLIC_CUSTOMER_ACCOUNT_API_CLIENT_ID: string;
     PUBLIC_CUSTOMER_ACCOUNT_API_URL: string;
     PUBLIC_CHECKOUT_DOMAIN: string;
+    // 下書き商品プレビュー用（未設定時はプレビュー機能は無効・通常の404挙動）
+    PRIVATE_ADMIN_API_TOKEN?: string;
+    PREVIEW_TOKEN?: string;
   }
 }
 
