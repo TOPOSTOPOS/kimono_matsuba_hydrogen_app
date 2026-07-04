@@ -42,6 +42,7 @@ export function Footer({
       <div className="flex flex-col gap-6 mx-auto w-full max-w-245">
         <Nav collectionNav={collectionNav} isFooter />
         <FooterMenu menu={menu} />
+        <FooterInfoLinks />
         <div className="hidden">
           <CountrySelector />
         </div>
@@ -123,6 +124,25 @@ function FooterMenu({menu}: {menu?: EnhancedMenu}) {
         </section>
       ))}
     </>
+  );
+}
+
+function FooterInfoLinks() {
+  const links = [
+    {to: '/flow', title: 'ご利用の流れ'},
+    {to: '/contact', title: 'お問い合わせ'},
+  ];
+  return (
+    <section className="grid gap-4 text-primary">
+      <h3 className="font-bold cursor-default text-lead">ご案内</h3>
+      <nav className="grid gap-2">
+        {links.map((link) => (
+          <Link key={link.to} to={link.to} prefetch="intent">
+            {link.title}
+          </Link>
+        ))}
+      </nav>
+    </section>
   );
 }
 

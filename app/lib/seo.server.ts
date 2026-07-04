@@ -33,8 +33,9 @@ function root({
     title: shop?.name,
     titleTemplate: '%s | 着物レンタルモールhataori(ハタオリ)',
     description: truncate(shop?.description ?? ''),
-    handle: '@shopify',
+    handle: '@hon_matsuba',
     url,
+    media: shop.brand?.logo?.image?.url,
     robots: {
       noIndex: false,
       noFollow: false,
@@ -45,11 +46,8 @@ function root({
       name: shop.name,
       logo: shop.brand?.logo?.image?.url,
       sameAs: [
-        'https://x.com/shopify',
-        'https://facebook.com/shopify',
-        'https://instagram.com/shopify',
-        'https://youtube.com/shopify',
-        'https://tiktok.com/@shopify',
+        'https://x.com/hon_matsuba',
+        'https://www.instagram.com/hon_kimonomatsuba/',
       ],
       url,
       potentialAction: {
@@ -74,7 +72,7 @@ function home(): SeoConfig {
     jsonLd: {
       '@context': 'https://schema.org',
       '@type': 'WebPage',
-      name: 'Home page',
+      name: 'トップページ',
     },
   };
 }
@@ -155,7 +153,7 @@ function productJsonLd({
         name: product.vendor,
       },
       description,
-      image: [selectedVariant?.image?.url ?? ''],
+      image: selectedVariant?.image?.url ? [selectedVariant.image.url] : [],
       name: product.title,
       offers,
       sku: selectedVariant?.sku ?? '',
@@ -208,7 +206,7 @@ function collectionJsonLd({
       return {
         '@type': 'ListItem',
         position: index + 1,
-        url: `/products/${product.handle}`,
+        url: `${siteUrl.origin}/products/${product.handle}`,
       };
     });
 
@@ -221,7 +219,7 @@ function collectionJsonLd({
           '@type': 'ListItem',
           position: 1,
           name: 'Collections',
-          item: `${siteUrl.host}/collections`,
+          item: `${siteUrl.origin}/collections`,
         },
         {
           '@type': 'ListItem',
@@ -238,7 +236,7 @@ function collectionJsonLd({
         collection?.seo?.description ?? collection?.description ?? '',
       ),
       image: collection?.image?.url,
-      url: `/collections/${collection.handle}`,
+      url: `${siteUrl.origin}/collections/${collection.handle}`,
       mainEntity: {
         '@type': 'ItemList',
         itemListElement,
@@ -255,11 +253,10 @@ function collection({
   url: Request['url'];
 }): SeoConfig {
   return {
-    title: collection?.seo?.title,
+    title: collection?.seo?.title ?? collection?.title,
     description: truncate(
       collection?.seo?.description ?? collection?.description ?? '',
     ),
-    titleTemplate: '%s | Collection',
     media: {
       type: 'image',
       url: collection?.image?.url,
@@ -282,12 +279,13 @@ function collectionsJsonLd({
   url: Request['url'];
   collections: CollectionListRequiredFields;
 }): SeoConfig['jsonLd'] {
+  const origin = new URL(url).origin;
   const itemListElement: CollectionPage['mainEntity'] = collections.nodes.map(
     (collection, index) => {
       return {
         '@type': 'ListItem',
         position: index + 1,
-        url: `/collections/${collection.handle}`,
+        url: `${origin}/collections/${collection.handle}`,
       };
     },
   );
@@ -296,7 +294,7 @@ function collectionsJsonLd({
     '@context': 'https://schema.org',
     '@type': 'CollectionPage',
     name: 'すべてのカテゴリ',
-    description: 'All collections',
+    description: 'すべての商品カテゴリの一覧です。',
     url,
     mainEntity: {
       '@type': 'ItemList',
@@ -314,8 +312,7 @@ function listCollections({
 }): SeoConfig {
   return {
     title: 'すべてのカテゴリ',
-    titleTemplate: '%s | すべてのカテゴリ',
-    description: 'All hydrogen collections',
+    description: 'すべての商品カテゴリの一覧です。',
     url,
     jsonLd: collectionsJsonLd({collections, url}),
   };
@@ -339,7 +336,6 @@ function article({
   return {
     title: article?.seo?.title ?? article?.title,
     description: truncate(article?.seo?.description ?? ''),
-    titleTemplate: '%s | Journal',
     url,
     media: {
       type: 'image',
@@ -372,9 +368,8 @@ function blog({
   url: Request['url'];
 }): SeoConfig {
   return {
-    title: blog?.seo?.title,
+    title: blog?.seo?.title ?? blog?.title,
     description: truncate(blog?.seo?.description || ''),
-    titleTemplate: '%s | Blog',
     url,
     jsonLd: {
       '@context': 'https://schema.org',
@@ -396,7 +391,6 @@ function page({
   return {
     description: truncate(page?.seo?.description || ''),
     title: page?.seo?.title ?? page?.title,
-    titleTemplate: '%s | Page',
     url,
     jsonLd: {
       '@context': 'https://schema.org',
@@ -416,7 +410,6 @@ function policy({
   return {
     description: truncate(policy?.body ?? ''),
     title: policy?.title,
-    titleTemplate: '%s | Policy',
     url,
   };
 }
@@ -440,9 +433,8 @@ function policies({
       };
     });
   return {
-    title: 'Policies',
-    titleTemplate: '%s | Policies',
-    description: 'Hydroge store policies',
+    title: 'ポリシー',
+    description: '各種ポリシー・規約の一覧です。',
     jsonLd: [
       {
         '@context': 'https://schema.org',
@@ -452,8 +444,8 @@ function policies({
       {
         '@context': 'https://schema.org',
         '@type': 'WebPage',
-        description: 'Hydrogen store policies',
-        name: 'Policies',
+        description: '各種ポリシー・規約の一覧です。',
+        name: 'ポリシー',
         url,
       },
     ],

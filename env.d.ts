@@ -31,6 +31,10 @@ declare global {
     // 下書き商品プレビュー用（未設定時はプレビュー機能は無効・通常の404挙動）
     PRIVATE_ADMIN_API_TOKEN?: string;
     PREVIEW_TOKEN?: string;
+    // お問い合わせフォームのメール送信用（未設定時は送信不可）
+    RESEND_API_KEY?: string;
+    CONTACT_FROM_EMAIL?: string;
+    CONTACT_TO_EMAIL?: string;
   }
 }
 

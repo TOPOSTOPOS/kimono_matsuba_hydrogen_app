@@ -16,6 +16,12 @@ export default async function handleRequest(
       checkoutDomain: context.env.PUBLIC_CHECKOUT_DOMAIN,
       storeDomain: context.env.PUBLIC_STORE_DOMAIN,
     },
+    // YouTube 動画（iframe 埋め込み）を許可
+    frameSrc: [
+      "'self'",
+      'https://www.youtube.com',
+      'https://www.youtube-nocookie.com',
+    ],
   });
 
   const body = await renderToReadableStream(
