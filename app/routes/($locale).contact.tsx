@@ -113,8 +113,8 @@ export default function Contact() {
   if (actionData?.ok) {
     return (
       <Section as="div" className="mx-auto max-w-2xl">
-        <PageHeader heading="お問い合わせ" />
-        <div className="px-6 pb-16 md:px-0">
+        <PageHeader heading="お問い合わせ" padding="" />
+        <div className="px-6 pb-16">
           <div className="p-6 text-center rounded-lg border border-primary/10 bg-gray-50">
             <p className="text-lg font-bold">送信が完了しました。</p>
             <Text className="mt-3" as="p">
@@ -142,7 +142,7 @@ export default function Contact() {
         </Text>
       </PageHeader>
 
-      <div className="px-6 pb-16 md:px-0">
+      <div className="px-6 pb-16">
         {actionData?.formError && (
           <div className="p-4 mb-6 text-sm text-red-900 bg-red-100 rounded-sm">
             {actionData.formError}

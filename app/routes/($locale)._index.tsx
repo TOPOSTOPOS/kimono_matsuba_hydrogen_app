@@ -241,7 +241,35 @@ export default function Homepage() {
           <Nav collectionNav={collectionNav} />
         </div>
       </div>
+      <AboutMatsuba />
     </>
+  );
+}
+
+function AboutMatsuba() {
+  return (
+    <section className="w-full bg-gray-50">
+      <div className="flex flex-col gap-8 items-center px-6 py-14 mx-auto max-w-245 md:flex-row md:gap-12 md:px-8">
+        <div className="w-full md:w-1/2">
+          <img
+            src="/images/about-matsuba.jpg"
+            alt="本きもの松葉"
+            loading="lazy"
+            className="object-cover w-full"
+          />
+        </div>
+        <div className="w-full text-center md:w-1/2">
+          <h2 className="mb-6 text-xl font-bold">本きもの松葉について</h2>
+          <p className="text-sm leading-loose text-primary/80 whitespace-pre-line">
+            {`着物に袖を通す日は、かけがえのない大切な日。
+その一日を、心から誇れる一着で迎えてほしい――
+私たち本きもの松葉は、1977年創業の老舗呉服店として、
+長年の目利きと仕入れを活かし、
+すべて正絹の振袖を高品質・お値打ち価格でお届けしています。`}
+          </p>
+        </div>
+      </div>
+    </section>
   );
 }
 
