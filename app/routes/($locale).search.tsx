@@ -61,19 +61,23 @@ export async function loader({
     url: request.url,
     collection: {
       id: 'search',
-      title: 'Search',
+      title: '検索結果',
       handle: 'search',
-      descriptionHtml: 'Search results',
-      description: 'Search results',
+      descriptionHtml: '検索結果',
+      description: '検索結果',
       seo: {
-        title: 'Search',
-        description: `Showing ${products.nodes.length} search results for "${searchTerm}"`,
+        title: searchTerm ? `「${searchTerm}」の検索結果` : '検索結果',
+        description: searchTerm
+          ? `「${searchTerm}」の検索結果を${products.nodes.length}件表示しています。`
+          : '商品を検索できます。',
       },
       metafields: [],
       products,
       updatedAt: new Date().toISOString(),
     },
   });
+  // 検索結果は薄い/重複ページのため検索エンジンにインデックスさせない
+  seo.robots = {noIndex: true, noFollow: false};
 
   return defer({
     seo,
