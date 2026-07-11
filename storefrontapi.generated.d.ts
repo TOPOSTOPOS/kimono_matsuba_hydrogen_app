@@ -1428,7 +1428,7 @@ interface GeneratedQueryTypes {
     return: TabiOptionsQuery;
     variables: TabiOptionsQueryVariables;
   };
-  '#graphql\n  query ProductRentalMetafields($handle: String!) {\n    product(handle: $handle) {\n      metafields(identifiers: [\n        {namespace: "custom", key: "is_rental"},\n        {namespace: "custom", key: "is_furisode"},\n        {namespace: "custom", key: "is_hakama"},\n        {namespace: "custom", key: "unavailable_dates"}\n      ]) {\n        key\n        value\n      }\n    }\n  }\n': {
+  '#graphql\n  query ProductRentalMetafields($handle: String!) {\n    product(handle: $handle) {\n      metafields(identifiers: [\n        {namespace: "custom", key: "is_rental"},\n        {namespace: "custom", key: "is_furisode"},\n        {namespace: "custom", key: "is_hakama"},\n        {namespace: "custom", key: "is_tomesode"},\n        {namespace: "custom", key: "is_houmongi"},\n        {namespace: "custom", key: "unavailable_dates"}\n      ]) {\n        key\n        value\n      }\n    }\n  }\n': {
     return: ProductRentalMetafieldsQuery;
     variables: ProductRentalMetafieldsQueryVariables;
   };
