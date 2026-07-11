@@ -98,8 +98,18 @@ async function ensureDefinition() {
         access: {storefront: 'PUBLIC_READ'},
         capabilities: {publishable: {enabled: true}},
         fieldDefinitions: [
-          {key: 'question', name: '質問', type: 'single_line_text_field', required: true},
-          {key: 'answer', name: '回答', type: 'rich_text_field', required: true},
+          {
+            key: 'question',
+            name: '質問',
+            type: 'single_line_text_field',
+            required: true,
+          },
+          {
+            key: 'answer',
+            name: '回答',
+            type: 'rich_text_field',
+            required: true,
+          },
           {key: 'category', name: 'カテゴリ', type: 'single_line_text_field'},
           {key: 'sort_order', name: '表示順', type: 'number_integer'},
         ],

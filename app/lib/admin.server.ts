@@ -38,7 +38,9 @@ type MappedVariant = {
   product: {title: string; handle: string};
 };
 
-const ADMIN_PREVIEW_PRODUCT_QUERY = `#graphql
+// 注意: これは Admin API 用クエリ。Storefront の codegen に拾われないよう
+// あえて `#graphql` コメントを付けない（付けると Storefront スキーマで検証され失敗する）。
+const ADMIN_PREVIEW_PRODUCT_QUERY = `
   query PreviewProduct($query: String!) {
     products(first: 1, query: $query) {
       nodes {
