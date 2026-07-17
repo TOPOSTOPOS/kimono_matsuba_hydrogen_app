@@ -173,6 +173,19 @@ function CartLines({
   const scrollRef = useRef(null);
   const {y} = useScroll(scrollRef);
 
+  // オプション（種別を持つ行＝安心パック・刺繍半衿・帯）を、同じ _親ID の親商品に紐付ける
+  const getAttr = (line: CartLine, key: string) =>
+    line.attributes?.find((a) => a.key === key)?.value ?? undefined;
+  const childIdsByGroup = new Map<string, string[]>();
+  for (const line of currentLines as CartLine[]) {
+    const groupId = getAttr(line, '_親ID');
+    const isOption = Boolean(getAttr(line, '種別'));
+    if (groupId && isOption) {
+      if (!childIdsByGroup.has(groupId)) childIdsByGroup.set(groupId, []);
+      childIdsByGroup.get(groupId)!.push(line.id);
+    }
+  }
+
   const className = clsx([
     y > 0 ? 'border-t' : '',
     layout === 'page'
@@ -187,9 +200,23 @@ function CartLines({
       className={className}
     >
       <ul className="grid gap-6 md:gap-10">
-        {currentLines.map((line) => (
-          <CartLineItem key={line.id} line={line as CartLine} />
-        ))}
+        {currentLines.map((line) => {
+          const l = line as CartLine;
+          const groupId = getAttr(l, '_親ID');
+          const isOption = Boolean(getAttr(l, '種別'));
+          // 親商品：自身＋紐付く子（オプション）をまとめて削除。オプション：削除ボタン非表示。
+          const removeLineIds = isOption
+            ? [l.id]
+            : [l.id, ...((groupId && childIdsByGroup.get(groupId)) || [])];
+          return (
+            <CartLineItem
+              key={l.id}
+              line={l}
+              isOption={isOption}
+              removeLineIds={removeLineIds}
+            />
+          );
+        })}
       </ul>
     </section>
   );
@@ -276,7 +303,15 @@ type OptimisticData = {
   quantity?: number;
 };
 
-function CartLineItem({line}: {line: CartLine}) {
+function CartLineItem({
+  line,
+  isOption = false,
+  removeLineIds,
+}: {
+  line: CartLine;
+  isOption?: boolean;
+  removeLineIds: string[];
+}) {
   const optimisticData = useOptimisticData<OptimisticData>(line?.id);
 
   if (!line?.id) return null;
@@ -334,19 +369,24 @@ function CartLineItem({line}: {line: CartLine}) {
           </div>
 
           <div className="grid pb-2">
-            {(attributes || []).map((attr) => (
-              <Text color="subtle" key={attr.key}>
-                {attr.key}: {attr.value}
-              </Text>
-            ))}
+            {(attributes || [])
+              .filter((attr) => !attr.key.startsWith('_'))
+              .map((attr) => (
+                <Text color="subtle" key={attr.key}>
+                  {attr.key}: {attr.value}
+                </Text>
+              ))}
           </div>
 
-          <div className="flex gap-2 items-center">
-            <div className="flex justify-start text-copy">
-              <CartLineQuantityAdjust line={line} />
+          {/* オプション（種別あり）は個別削除・数量変更させず、親商品の削除に紐付ける */}
+          {!isOption && (
+            <div className="flex gap-2 items-center">
+              <div className="flex justify-start text-copy">
+                <CartLineQuantityAdjust line={line} />
+              </div>
+              <ItemRemoveButton lineIds={removeLineIds} />
             </div>
-            <ItemRemoveButton lineId={id} />
-          </div>
+          )}
         </div>
         <Text>
           <CartLinePrice line={line} as="span" />
@@ -356,13 +396,13 @@ function CartLineItem({line}: {line: CartLine}) {
   );
 }
 
-function ItemRemoveButton({lineId}: {lineId: CartLine['id']}) {
+function ItemRemoveButton({lineIds}: {lineIds: CartLine['id'][]}) {
   return (
     <CartForm
       route="/cart"
       action={CartForm.ACTIONS.LinesRemove}
       inputs={{
-        lineIds: [lineId],
+        lineIds,
       }}
     >
       <button
@@ -372,7 +412,9 @@ function ItemRemoveButton({lineId}: {lineId: CartLine['id']}) {
         <span className="sr-only">Remove</span>
         <IconRemove aria-hidden="true" />
       </button>
-      <OptimisticInput id={lineId} data={{action: 'remove'}} />
+      {lineIds.map((id) => (
+        <OptimisticInput key={id} id={id} data={{action: 'remove'}} />
+      ))}
     </CartForm>
   );
 }

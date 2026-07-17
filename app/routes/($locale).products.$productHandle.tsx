@@ -491,6 +491,16 @@ export function ProductForm({
   // 草履サイズを表示する着物種別（振袖・袴・留袖・訪問着）
   const showZooriSize = isFurisode || isHakama || isTomesode || isHoumongi;
 
+  // カート投入ごとに一意なグループID（親商品とオプションを紐付ける）。
+  // クライアントのみで生成し、追加のたび（カート数量が変わるたび）に再発行するので、
+  // 同じ商品を複数回入れても各グループが区別される。
+  const [cartGroupId, setCartGroupId] = useState('');
+  useEffect(() => {
+    setCartGroupId(
+      `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`,
+    );
+  }, [cartTotalQuantity]);
+
   const currentDate = new Date();
   currentDate.setDate(currentDate.getDate() + 13);
   const minDate = currentDate;
@@ -643,6 +653,12 @@ export function ProductForm({
               .join(',')
           : '',
     },
+    {
+      // オプション（安心パック・刺繍半衿・帯）を親商品に紐付けるグループID。
+      // カートで親を削除すると同一_親IDの行も一括削除する。
+      key: '_親ID',
+      value: cartGroupId,
+    },
   ].filter((attribute) => attribute.value !== '');
 
   let isOptionError = false;
@@ -657,7 +673,8 @@ export function ProductForm({
     isOptionError = true;
   }
 
-  const isDisableAddToCart = cartTotalQuantity >= 1 || isOptionError;
+  // 複数商品をカートに入れられるようにするため、数量による制限は行わない
+  const isDisableAddToCart = isOptionError;
 
   const anshinPackPrice = anshinPack
     ? parseFloat(anshinPack.price.amount)
@@ -679,11 +696,16 @@ export function ProductForm({
     },
   ];
 
+  const parentGroupId = cartGroupId;
+
   if (selectedAnshinPack && anshinPack) {
     lines.push({
       merchandiseId: anshinPack.variantId,
       quantity: 1,
-      attributes: [{key: '種別', value: '安心パック'}],
+      attributes: [
+        {key: '種別', value: '安心パック'},
+        {key: '_親ID', value: parentGroupId},
+      ],
     });
   }
 
@@ -691,7 +713,10 @@ export function ProductForm({
     lines.push({
       merchandiseId: shishuHaneri.variantId,
       quantity: 1,
-      attributes: [{key: '種別', value: '刺繍半衿オプション'}],
+      attributes: [
+        {key: '種別', value: '刺繍半衿オプション'},
+        {key: '_親ID', value: parentGroupId},
+      ],
     });
   }
 
@@ -701,11 +726,13 @@ export function ProductForm({
         merchandiseId: selectedBelt,
         quantity: 1,
         attributes: [
+          {key: '種別', value: '帯'},
           {
             key: '連携ID',
             value:
               belts?.find((belt) => belt.id === selectedBelt)?.hashId || '',
           },
+          {key: '_親ID', value: parentGroupId},
         ],
       });
     });
