@@ -291,7 +291,7 @@ function DesktopHeader({
               isHome ? 'text-black' : 'text-black'
             } text-[.75rem] sr-only`}
           >
-            着物レンタルモールhataori(ハタオリ)
+            成人式の振袖レンタル・ママ振・ご購入は、衣装点数が大阪最大級の本きもの松葉
           </h1>
           <div className="">
             <Link className="font-bold" to="/" prefetch="intent">

@@ -22,6 +22,28 @@ import type {
 
 import type {ShopFragment} from 'storefrontapi.generated';
 
+const BRAND = '本きもの松葉';
+/** タイトル未設定時に使う規定タイトル（トップページもこれ） */
+const DEFAULT_TITLE =
+  '成人式の振袖レンタル・ママ振・ご購入は、衣装点数が大阪最大級の本きもの松葉';
+/** 説明文未設定時に使う規定ディスクリプション */
+const DEFAULT_DESCRIPTION =
+  '本きもの松葉は、着物・一般呉服の販売・成人式の振袖レンタル・ママ振や販売を行っています。大阪最大級の衣装点数があり、1948年の創業以来たくさんお客様のお手伝いをしてきた実績があります。大阪市・堺市などでたくさんのお客様にご愛顧頂いております。';
+
+/**
+ * タイトルとテンプレートを組み立てる。
+ * - 個別タイトルあり → 「○○ | 本きもの松葉」
+ * - 個別タイトルなし → 規定タイトル（接尾辞なし。規定タイトルにブランド名を含むため）
+ */
+function buildTitle(specificTitle?: string | null): {
+  title: string;
+  titleTemplate: string;
+} {
+  return specificTitle
+    ? {title: specificTitle, titleTemplate: `%s | ${BRAND}`}
+    : {title: DEFAULT_TITLE, titleTemplate: '%s'};
+}
+
 function root({
   shop,
   url,
@@ -30,9 +52,10 @@ function root({
   url: Request['url'];
 }): SeoConfig {
   return {
-    title: shop?.name,
-    titleTemplate: '%s | 着物レンタルモールhataori(ハタオリ)',
-    description: truncate(shop?.description ?? ''),
+    // 個別seoが無いルートのフォールバック。規定タイトル（接尾辞なし）
+    title: DEFAULT_TITLE,
+    titleTemplate: '%s',
+    description: truncate(shop?.description || DEFAULT_DESCRIPTION),
     handle: '@hon_matsuba',
     url,
     media: shop.brand?.logo?.image?.url,
@@ -61,10 +84,10 @@ function root({
 
 function home(): SeoConfig {
   return {
-    title: 'トップページ',
-    titleTemplate: '%s | 着物レンタルモールhataori(ハタオリ)',
-    description:
-      '【着物レンタルモールhataori】hataoriは日本最大級の着物レンタルサイトです。日本の伝統文化である着物を、お手ごろな価格でお楽しみいただけます。ご利用日の2日前に届き、使い終わった次の日に箱に入れて送るだけの簡単返却。1月利用は7泊8日。全国一律・往復送料無料。後払いOK。',
+    // トップページのタイトルは規定タイトルそのもの（接尾辞なし）
+    title: DEFAULT_TITLE,
+    titleTemplate: '%s',
+    description: DEFAULT_DESCRIPTION,
     robots: {
       noIndex: false,
       noFollow: false,
@@ -72,7 +95,7 @@ function home(): SeoConfig {
     jsonLd: {
       '@context': 'https://schema.org',
       '@type': 'WebPage',
-      name: 'トップページ',
+      name: DEFAULT_TITLE,
     },
   };
 }
@@ -172,10 +195,10 @@ function product({
   url: Request['url'];
 }): SeoConfig {
   const description = truncate(
-    product?.seo?.description ?? product?.description ?? '',
+    product?.seo?.description || product?.description || DEFAULT_DESCRIPTION,
   );
   return {
-    title: product?.seo?.title ?? product?.title,
+    ...buildTitle(product?.seo?.title || product?.title),
     description,
     media: selectedVariant?.image,
     jsonLd: productJsonLd({product, selectedVariant, url}),
@@ -253,9 +276,11 @@ function collection({
   url: Request['url'];
 }): SeoConfig {
   return {
-    title: collection?.seo?.title ?? collection?.title,
+    ...buildTitle(collection?.seo?.title || collection?.title),
     description: truncate(
-      collection?.seo?.description ?? collection?.description ?? '',
+      collection?.seo?.description ||
+        collection?.description ||
+        DEFAULT_DESCRIPTION,
     ),
     media: {
       type: 'image',
@@ -311,7 +336,7 @@ function listCollections({
   url: Request['url'];
 }): SeoConfig {
   return {
-    title: 'すべてのカテゴリ',
+    ...buildTitle('すべてのカテゴリ'),
     description: 'すべての商品カテゴリの一覧です。',
     url,
     jsonLd: collectionsJsonLd({collections, url}),
@@ -334,8 +359,8 @@ function article({
   url: Request['url'];
 }): SeoConfig {
   return {
-    title: article?.seo?.title ?? article?.title,
-    description: truncate(article?.seo?.description ?? ''),
+    ...buildTitle(article?.seo?.title || article?.title),
+    description: truncate(article?.seo?.description || DEFAULT_DESCRIPTION),
     url,
     media: {
       type: 'image',
@@ -368,8 +393,8 @@ function blog({
   url: Request['url'];
 }): SeoConfig {
   return {
-    title: blog?.seo?.title ?? blog?.title,
-    description: truncate(blog?.seo?.description || ''),
+    ...buildTitle(blog?.seo?.title || blog?.title),
+    description: truncate(blog?.seo?.description || DEFAULT_DESCRIPTION),
     url,
     jsonLd: {
       '@context': 'https://schema.org',
@@ -389,8 +414,8 @@ function page({
   url: Request['url'];
 }): SeoConfig {
   return {
-    description: truncate(page?.seo?.description || ''),
-    title: page?.seo?.title ?? page?.title,
+    ...buildTitle(page?.seo?.title || page?.title),
+    description: truncate(page?.seo?.description || DEFAULT_DESCRIPTION),
     url,
     jsonLd: {
       '@context': 'https://schema.org',
@@ -408,8 +433,8 @@ function policy({
   url: Request['url'];
 }): SeoConfig {
   return {
-    description: truncate(policy?.body ?? ''),
-    title: policy?.title,
+    ...buildTitle(policy?.title),
+    description: truncate(policy?.body || DEFAULT_DESCRIPTION),
     url,
   };
 }
@@ -433,7 +458,7 @@ function policies({
       };
     });
   return {
-    title: 'ポリシー',
+    ...buildTitle('ポリシー'),
     description: '各種ポリシー・規約の一覧です。',
     jsonLd: [
       {
