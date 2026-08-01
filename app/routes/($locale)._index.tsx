@@ -30,6 +30,13 @@ import type {RootLoader} from '~/root';
 export const BUY_COLLECTION_HANDLE = 'buy';
 export const RENT_COLLECTION_HANDLE = 'rental';
 
+/**
+ * トップの「おすすめ商品」枠に使うコレクションハンドル。
+ * 管理画面でこのハンドルのコレクションを作成し、手動並び替えすると掲載商品と順番を変更できる。
+ * 未作成・空の場合は従来どおり全商品から取得する。
+ */
+export const HOMEPAGE_FEATURED_COLLECTION_HANDLE = 'featured';
+
 /** トップに売れ筋ブロックを出すコレクションハンドル（空なら非表示） */
 export const HOMEPAGE_COLLECTION_TOP_SELLING_HANDLE = 'all';
 
@@ -96,24 +103,49 @@ async function loadCriticalData({context}: LoaderFunctionArgs) {
  */
 function loadDeferredData({context}: LoaderFunctionArgs) {
   const {language, country} = context.storefront.i18n;
-  const featuredProducts = context.storefront
-    .query(HOMEPAGE_FEATURED_PRODUCTS_QUERY, {
-      variables: {
-        /**
-         * Country and language properties are automatically injected
-         * into all queries. Passing them is unnecessary unless you
-         * want to override them from the following default:
-         */
-        country,
-        language,
-      },
-    })
-    .catch((error) => {
+  // おすすめ商品：featured コレクション（管理画面で手動並び替え）を優先し、
+  // 未作成・空なら従来どおり全商品から取得する
+  const featuredProducts = (async () => {
+    try {
+      const collectionResult: any = await context.storefront.query(
+        HOMEPAGE_FEATURED_COLLECTION_PRODUCTS_QUERY,
+        {
+          variables: {
+            handle: HOMEPAGE_FEATURED_COLLECTION_HANDLE,
+            country,
+            language,
+          },
+        },
+      );
+      const nodes = collectionResult?.collection?.products?.nodes ?? [];
+      if (nodes.length > 0) {
+        return {products: {nodes}};
+      }
+    } catch (error) {
+      // コレクション未作成などは想定内。フォールバックに進む
+      // eslint-disable-next-line no-console
+      console.error(error);
+    }
+
+    try {
+      return await context.storefront.query(HOMEPAGE_FEATURED_PRODUCTS_QUERY, {
+        variables: {
+          /**
+           * Country and language properties are automatically injected
+           * into all queries. Passing them is unnecessary unless you
+           * want to override them from the following default:
+           */
+          country,
+          language,
+        },
+      });
+    } catch (error) {
       // Log query errors, but don't throw them so the page can still render
       // eslint-disable-next-line no-console
       console.error(error);
       return null;
-    });
+    }
+  })();
 
   const featuredCollections = context.storefront
     .query(FEATURED_COLLECTIONS_QUERY, {
@@ -379,6 +411,30 @@ export const HOMEPAGE_FEATURED_PRODUCTS_QUERY = `#graphql
     products(first: 8, query: "-tag:帯 AND -tag:オプション") {
       nodes {
         ...ProductCard
+      }
+    }
+  }
+  ${PRODUCT_CARD_FRAGMENT}
+` as const;
+
+/**
+ * トップの「おすすめ商品」枠。Shopify管理画面のコレクション（handle: featured）から取得する。
+ * 掲載商品と表示順は、コレクションの「手動」並び替え（sortKey: MANUAL）で管理できる。
+ * コレクション未作成・空の場合は HOMEPAGE_FEATURED_PRODUCTS_QUERY にフォールバックする。
+ */
+export const HOMEPAGE_FEATURED_COLLECTION_PRODUCTS_QUERY = `#graphql
+  query homepageFeaturedCollectionProducts(
+    $handle: String!
+    $country: CountryCode
+    $language: LanguageCode
+  ) @inContext(country: $country, language: $language) {
+    collection(handle: $handle) {
+      id
+      handle
+      products(first: 8, sortKey: MANUAL) {
+        nodes {
+          ...ProductCard
+        }
       }
     }
   }
