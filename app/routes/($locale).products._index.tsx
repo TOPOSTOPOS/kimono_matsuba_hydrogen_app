@@ -12,6 +12,7 @@ import {
   getPaginationVariables,
   getSeoMeta,
 } from '@shopify/hydrogen';
+import type {ProductSortKeys} from '@shopify/hydrogen/storefront-api-types';
 
 import {PageHeader, Section} from '~/components/Text';
 import {ProductCard} from '~/components/ProductCard';
@@ -33,10 +34,14 @@ export async function loader({
   context: {storefront},
 }: LoaderFunctionArgs) {
   const variables = getPaginationVariables(request, {pageBy: PAGE_BY});
+  const {searchParams} = new URL(request.url);
+  const {sortKey, reverse} = getSortValuesFromParam(searchParams.get('sort'));
 
   const data = await storefront.query(ALL_PRODUCTS_QUERY, {
     variables: {
       ...variables,
+      sortKey,
+      reverse,
       country: storefront.i18n.country,
       language: storefront.i18n.language,
     },
@@ -170,6 +175,29 @@ function ProductsLoadedOnScroll({
   );
 }
 
+/**
+ * ?sort= の値を Storefront API の並び順に変換する。
+ * 未指定時は新着順（CREATED_AT の降順）。
+ */
+function getSortValuesFromParam(sortParam: string | null): {
+  sortKey: ProductSortKeys;
+  reverse: boolean;
+} {
+  switch (sortParam) {
+    case 'price-high-low':
+      return {sortKey: 'PRICE', reverse: true};
+    case 'price-low-high':
+      return {sortKey: 'PRICE', reverse: false};
+    case 'best-selling':
+      return {sortKey: 'BEST_SELLING', reverse: false};
+    case 'featured':
+      return {sortKey: 'RELEVANCE', reverse: false};
+    case 'newest':
+    default:
+      return {sortKey: 'CREATED_AT', reverse: true};
+  }
+}
+
 const ALL_PRODUCTS_QUERY = `#graphql
   query AllProducts(
     $country: CountryCode
@@ -178,8 +206,10 @@ const ALL_PRODUCTS_QUERY = `#graphql
     $last: Int
     $startCursor: String
     $endCursor: String
+    $sortKey: ProductSortKeys
+    $reverse: Boolean
   ) @inContext(country: $country, language: $language) {
-    products(first: $first, last: $last, before: $startCursor, after: $endCursor, query: "-tag:帯 AND -tag:オプション") {
+    products(first: $first, last: $last, before: $startCursor, after: $endCursor, sortKey: $sortKey, reverse: $reverse, query: "-tag:帯 AND -tag:オプション") {
       nodes {
         ...ProductCard
       }

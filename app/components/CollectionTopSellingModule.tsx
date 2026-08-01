@@ -97,7 +97,8 @@ export function CollectionTopSellingModule({
           <div className="w-48 h-8 rounded animate-pulse bg-primary/5" />
         )}
         <Link
-          to={`/collections/${handle}`}
+          // 「すべて見る」は新着順で着地させる
+          to={`/collections/${handle}?sort=newest`}
           className="text-sm underline shrink-0 underline-offset-4"
           prefetch="intent"
         >
