@@ -185,11 +185,16 @@ export type LayoutQueryVariables = StorefrontAPI.Exact<{
 export type LayoutQuery = {
   shop: Pick<StorefrontAPI.Shop, 'id' | 'name' | 'description'> & {
     primaryDomain: Pick<StorefrontAPI.Domain, 'url'>;
-    brand?: StorefrontAPI.Maybe<{
-      logo?: StorefrontAPI.Maybe<{
-        image?: StorefrontAPI.Maybe<Pick<StorefrontAPI.Image, 'url'>>;
-      }>;
-    }>;
+    brand?: StorefrontAPI.Maybe<
+      Pick<StorefrontAPI.Brand, 'slogan' | 'shortDescription'> & {
+        logo?: StorefrontAPI.Maybe<{
+          image?: StorefrontAPI.Maybe<Pick<StorefrontAPI.Image, 'url'>>;
+        }>;
+        coverImage?: StorefrontAPI.Maybe<{
+          image?: StorefrontAPI.Maybe<Pick<StorefrontAPI.Image, 'url'>>;
+        }>;
+      }
+    >;
   };
   headerMenu?: StorefrontAPI.Maybe<
     Pick<StorefrontAPI.Menu, 'id'> & {
@@ -290,11 +295,16 @@ export type ShopFragment = Pick<
   'id' | 'name' | 'description'
 > & {
   primaryDomain: Pick<StorefrontAPI.Domain, 'url'>;
-  brand?: StorefrontAPI.Maybe<{
-    logo?: StorefrontAPI.Maybe<{
-      image?: StorefrontAPI.Maybe<Pick<StorefrontAPI.Image, 'url'>>;
-    }>;
-  }>;
+  brand?: StorefrontAPI.Maybe<
+    Pick<StorefrontAPI.Brand, 'slogan' | 'shortDescription'> & {
+      logo?: StorefrontAPI.Maybe<{
+        image?: StorefrontAPI.Maybe<Pick<StorefrontAPI.Image, 'url'>>;
+      }>;
+      coverImage?: StorefrontAPI.Maybe<{
+        image?: StorefrontAPI.Maybe<Pick<StorefrontAPI.Image, 'url'>>;
+      }>;
+    }
+  >;
 };
 
 export type MenuItemFragment = Pick<
@@ -1350,7 +1360,7 @@ export type SitemapsQuery = {
 };
 
 interface GeneratedQueryTypes {
-  '#graphql\n  query layout(\n    $language: LanguageCode\n    $headerMenuHandle: String!\n    $footerMenuHandle: String!\n  ) @inContext(language: $language) {\n    shop {\n      ...Shop\n    }\n    headerMenu: menu(handle: $headerMenuHandle) {\n      ...Menu\n    }\n    footerMenu: menu(handle: $footerMenuHandle) {\n      ...Menu\n    }\n    collectionNav: collections(first: 250) {\n      nodes { ...CollectionNavItem }\n    }\n    categoryNavBuy: menu(handle: "category-nav") {\n      ...Menu\n    }\n    categoryNavRental: menu(handle: "category-nav-rental") {\n      ...Menu\n    }\n    categoryNavCleaning: menu(handle: "category-nav-cleaning") {\n      ...Menu\n    }\n  }\n  fragment Shop on Shop {\n    id\n    name\n    description\n    primaryDomain {\n      url\n    }\n    brand {\n      logo {\n        image {\n          url\n        }\n      }\n    }\n  }\n  fragment MenuItem on MenuItem {\n    id\n    resourceId\n    tags\n    title\n    type\n    url\n  }\n  fragment ChildMenuItem on MenuItem {\n    ...MenuItem\n  }\n  fragment ParentMenuItem on MenuItem {\n    ...MenuItem\n    items {\n      ...ChildMenuItem\n    }\n  }\n  fragment CollectionNavItem on Collection {\n    handle\n    title\n    metafield(namespace: "custom", key: "collection_categories") {\n      value\n    }\n  }\n  fragment Menu on Menu {\n    id\n    items {\n      ...ParentMenuItem\n    }\n  }\n': {
+  '#graphql\n  query layout(\n    $language: LanguageCode\n    $headerMenuHandle: String!\n    $footerMenuHandle: String!\n  ) @inContext(language: $language) {\n    shop {\n      ...Shop\n    }\n    headerMenu: menu(handle: $headerMenuHandle) {\n      ...Menu\n    }\n    footerMenu: menu(handle: $footerMenuHandle) {\n      ...Menu\n    }\n    collectionNav: collections(first: 250) {\n      nodes { ...CollectionNavItem }\n    }\n    categoryNavBuy: menu(handle: "category-nav") {\n      ...Menu\n    }\n    categoryNavRental: menu(handle: "category-nav-rental") {\n      ...Menu\n    }\n    categoryNavCleaning: menu(handle: "category-nav-cleaning") {\n      ...Menu\n    }\n  }\n  fragment Shop on Shop {\n    id\n    name\n    description\n    primaryDomain {\n      url\n    }\n    brand {\n      # 管理画面「設定 → ブランド」で編集できる項目。SEOのタイトル/説明/OG画像に使う\n      slogan\n      shortDescription\n      logo {\n        image {\n          url\n        }\n      }\n      coverImage {\n        image {\n          url\n        }\n      }\n    }\n  }\n  fragment MenuItem on MenuItem {\n    id\n    resourceId\n    tags\n    title\n    type\n    url\n  }\n  fragment ChildMenuItem on MenuItem {\n    ...MenuItem\n  }\n  fragment ParentMenuItem on MenuItem {\n    ...MenuItem\n    items {\n      ...ChildMenuItem\n    }\n  }\n  fragment CollectionNavItem on Collection {\n    handle\n    title\n    metafield(namespace: "custom", key: "collection_categories") {\n      value\n    }\n  }\n  fragment Menu on Menu {\n    id\n    items {\n      ...ParentMenuItem\n    }\n  }\n': {
     return: LayoutQuery;
     variables: LayoutQueryVariables;
   };

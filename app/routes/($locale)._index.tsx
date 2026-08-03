@@ -91,7 +91,7 @@ async function loadCriticalData({context}: LoaderFunctionArgs) {
   return {
     shop,
     primaryHero: hero,
-    seo: seoPayload.home(),
+    seo: seoPayload.home({shop: shop as any}),
     heroNodes,
   };
 }
@@ -379,6 +379,21 @@ const HOMEPAGE_SEO_QUERY = `#graphql
     shop {
       name
       description
+      brand {
+        # 管理画面「設定 → ブランド」で編集した内容をSEOに使う
+        slogan
+        shortDescription
+        logo {
+          image {
+            url
+          }
+        }
+        coverImage {
+          image {
+            url
+          }
+        }
+      }
     }
   }
   ${COLLECTION_CONTENT_FRAGMENT}
