@@ -245,7 +245,15 @@ const LAYOUT_QUERY = `#graphql
       url
     }
     brand {
+      # 管理画面「設定 → ブランド」で編集できる項目。SEOのタイトル/説明/OG画像に使う
+      slogan
+      shortDescription
       logo {
+        image {
+          url
+        }
+      }
+      coverImage {
         image {
           url
         }

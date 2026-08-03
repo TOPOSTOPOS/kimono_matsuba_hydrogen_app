@@ -44,6 +44,24 @@ function buildTitle(specificTitle?: string | null): {
     : {title: DEFAULT_TITLE, titleTemplate: '%s'};
 }
 
+/**
+ * サイト共通のタイトル/説明/OG画像。
+ * Shopify管理画面「設定 → ブランド」で編集した内容を優先し、未設定ならコードの規定値を使う。
+ * - タイトル : brand.slogan（スローガン）→ DEFAULT_TITLE
+ * - 説明     : brand.shortDescription（簡単な説明）→ shop.description → DEFAULT_DESCRIPTION
+ * - OG画像   : brand.coverImage（カバー画像）→ brand.logo（ロゴ）
+ */
+function getSiteDefaults(shop?: ShopFragment | null) {
+  const brand = shop?.brand;
+  return {
+    title: brand?.slogan || DEFAULT_TITLE,
+    description: truncate(
+      brand?.shortDescription || shop?.description || DEFAULT_DESCRIPTION,
+    ),
+    image: brand?.coverImage?.image?.url || brand?.logo?.image?.url,
+  };
+}
+
 function root({
   shop,
   url,
@@ -51,14 +69,15 @@ function root({
   shop: ShopFragment;
   url: Request['url'];
 }): SeoConfig {
+  const site = getSiteDefaults(shop);
   return {
     // 個別seoが無いルートのフォールバック。規定タイトル（接尾辞なし）
-    title: DEFAULT_TITLE,
+    title: site.title,
     titleTemplate: '%s',
-    description: truncate(shop?.description || DEFAULT_DESCRIPTION),
+    description: site.description,
     handle: '@hon_matsuba',
     url,
-    media: shop.brand?.logo?.image?.url,
+    media: site.image,
     robots: {
       noIndex: false,
       noFollow: false,
@@ -82,12 +101,14 @@ function root({
   };
 }
 
-function home(): SeoConfig {
+function home(options?: {shop?: ShopFragment | null}): SeoConfig {
+  const site = getSiteDefaults(options?.shop);
   return {
     // トップページのタイトルは規定タイトルそのもの（接尾辞なし）
-    title: DEFAULT_TITLE,
+    title: site.title,
     titleTemplate: '%s',
-    description: DEFAULT_DESCRIPTION,
+    description: site.description,
+    media: site.image,
     robots: {
       noIndex: false,
       noFollow: false,
@@ -95,7 +116,7 @@ function home(): SeoConfig {
     jsonLd: {
       '@context': 'https://schema.org',
       '@type': 'WebPage',
-      name: DEFAULT_TITLE,
+      name: site.title,
     },
   };
 }
@@ -194,8 +215,9 @@ function product({
   selectedVariant: SelectedVariantRequiredFields;
   url: Request['url'];
 }): SeoConfig {
+  // 説明が無い場合は空にして、root（＝ブランド設定の説明）にフォールバックさせる
   const description = truncate(
-    product?.seo?.description || product?.description || DEFAULT_DESCRIPTION,
+    product?.seo?.description || product?.description || '',
   );
   return {
     ...buildTitle(product?.seo?.title || product?.title),
@@ -277,10 +299,9 @@ function collection({
 }): SeoConfig {
   return {
     ...buildTitle(collection?.seo?.title || collection?.title),
+    // 説明が無い場合は空にして、root（＝ブランド設定の説明）にフォールバックさせる
     description: truncate(
-      collection?.seo?.description ||
-        collection?.description ||
-        DEFAULT_DESCRIPTION,
+      collection?.seo?.description || collection?.description || '',
     ),
     media: {
       type: 'image',
@@ -360,7 +381,8 @@ function article({
 }): SeoConfig {
   return {
     ...buildTitle(article?.seo?.title || article?.title),
-    description: truncate(article?.seo?.description || DEFAULT_DESCRIPTION),
+    // 説明が無い場合は空にして、root（＝ブランド設定の説明）にフォールバックさせる
+    description: truncate(article?.seo?.description || article?.excerpt || ''),
     url,
     media: {
       type: 'image',
@@ -394,7 +416,8 @@ function blog({
 }): SeoConfig {
   return {
     ...buildTitle(blog?.seo?.title || blog?.title),
-    description: truncate(blog?.seo?.description || DEFAULT_DESCRIPTION),
+    // 説明が無い場合は空にして、root（＝ブランド設定の説明）にフォールバックさせる
+    description: truncate(blog?.seo?.description || ''),
     url,
     jsonLd: {
       '@context': 'https://schema.org',
@@ -415,7 +438,8 @@ function page({
 }): SeoConfig {
   return {
     ...buildTitle(page?.seo?.title || page?.title),
-    description: truncate(page?.seo?.description || DEFAULT_DESCRIPTION),
+    // 説明が無い場合は空にして、root（＝ブランド設定の説明）にフォールバックさせる
+    description: truncate(page?.seo?.description || ''),
     url,
     jsonLd: {
       '@context': 'https://schema.org',
@@ -434,7 +458,8 @@ function policy({
 }): SeoConfig {
   return {
     ...buildTitle(policy?.title),
-    description: truncate(policy?.body || DEFAULT_DESCRIPTION),
+    // 説明が無い場合は空にして、root（＝ブランド設定の説明）にフォールバックさせる
+    description: truncate(policy?.body || ''),
     url,
   };
 }
