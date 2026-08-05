@@ -22,6 +22,7 @@ import type {
 
 import type {ShopFragment} from 'storefrontapi.generated';
 
+/** サイト名の最終フォールバック（Shopifyの店名が取得できない場合のみ使用） */
 const BRAND = '本きもの松葉';
 /** タイトル未設定時に使う規定タイトル（トップページもこれ） */
 const DEFAULT_TITLE =
@@ -31,29 +32,28 @@ const DEFAULT_DESCRIPTION =
   '本きもの松葉は、着物・一般呉服の販売・成人式の振袖レンタル・ママ振や販売を行っています。大阪最大級の衣装点数があり、1948年の創業以来たくさんお客様のお手伝いをしてきた実績があります。大阪市・堺市などでたくさんのお客様にご愛顧頂いております。';
 
 /**
- * タイトルとテンプレートを組み立てる。
- * - 個別タイトルあり → 「○○ | 本きもの松葉」
- * - 個別タイトルなし → 規定タイトル（接尾辞なし。規定タイトルにブランド名を含むため）
+ * 下層ページのタイトルを組み立てる。
+ * 個別タイトルがあればそれを返し、接尾辞（「| 店名」）は root の titleTemplate が付与する。
+ * 個別タイトルが無ければ空にして、root のタイトル（＝スローガン／規定タイトル）に委ねる。
  */
 function buildTitle(specificTitle?: string | null): {
   title: string;
-  titleTemplate: string;
 } {
-  return specificTitle
-    ? {title: specificTitle, titleTemplate: `%s | ${BRAND}`}
-    : {title: DEFAULT_TITLE, titleTemplate: '%s'};
+  return {title: specificTitle || ''};
 }
 
 /**
- * サイト共通のタイトル/説明/OG画像。
- * Shopify管理画面「設定 → ブランド」で編集した内容を優先し、未設定ならコードの規定値を使う。
- * - タイトル : brand.slogan（スローガン）→ DEFAULT_TITLE
+ * サイト共通のサイト名/タイトル/説明/OG画像。
+ * Shopify管理画面の設定を優先し、未設定ならコードの規定値を使う。
+ * - サイト名 : shop.name（設定 → 一般 のストア名）→ BRAND
+ * - タイトル : brand.slogan（設定 → ブランド のスローガン）→ DEFAULT_TITLE
  * - 説明     : brand.shortDescription（簡単な説明）→ shop.description → DEFAULT_DESCRIPTION
  * - OG画像   : brand.coverImage（カバー画像）→ brand.logo（ロゴ）
  */
 function getSiteDefaults(shop?: ShopFragment | null) {
   const brand = shop?.brand;
   return {
+    siteName: shop?.name || BRAND,
     title: brand?.slogan || DEFAULT_TITLE,
     description: truncate(
       brand?.shortDescription || shop?.description || DEFAULT_DESCRIPTION,
@@ -71,9 +71,10 @@ function root({
 }): SeoConfig {
   const site = getSiteDefaults(shop);
   return {
-    // 個別seoが無いルートのフォールバック。規定タイトル（接尾辞なし）
+    // 個別タイトルが無いページはこのタイトル（スローガン／規定タイトル）が使われる。
+    // 個別タイトルがあるページは titleTemplate により「○○ | 店名」となる。
     title: site.title,
-    titleTemplate: '%s',
+    titleTemplate: `%s | ${site.siteName}`,
     description: site.description,
     handle: '@hon_matsuba',
     url,
