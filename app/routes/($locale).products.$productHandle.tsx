@@ -619,14 +619,16 @@ export function ProductForm({
       value: optionValues.tabiSize || '',
     },
     {
+      // レンタル商品のみ。販売商品では日付を付けない
       key: 'レンタル開始日',
-      value: optionValues.startDate
-        ? format(optionValues.startDate, 'yyyy/MM/dd')
-        : '',
+      value:
+        isRental && optionValues.startDate
+          ? format(optionValues.startDate, 'yyyy/MM/dd')
+          : '',
     },
     {
       key: '返却日',
-      value: format(returnDate, 'yyyy/MM/dd'),
+      value: isRental ? format(returnDate, 'yyyy/MM/dd') : '',
     },
     {
       key: '草履サイズ',
