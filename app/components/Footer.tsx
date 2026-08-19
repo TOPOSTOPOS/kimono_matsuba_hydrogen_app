@@ -131,6 +131,9 @@ function FooterInfoLinks() {
   const links = [
     {to: '/flow', title: 'ご利用の流れ'},
     {to: '/contact', title: 'お問い合わせ'},
+    // 特定商取引法に基づく表記は同一ドメイン内に設置する必要がある（決済審査要件）
+    {to: '/pages/tokushoho', title: '特定商取引法に基づく表記'},
+    {to: '/policies', title: '各種ポリシー'},
   ];
   return (
     <section className="grid gap-4 text-primary">

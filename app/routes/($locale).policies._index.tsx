@@ -26,9 +26,9 @@ export async function loader({
     data.shop as NonNullableFields<typeof data.shop>,
   ).filter(Boolean);
 
-  if (policies.length === 0) {
-    throw new Response('Not found', {status: 404});
-  }
+  // 特定商取引法に基づく表記は Storefront API のポリシーに含まれないため、
+  // 固定ページ（/pages/tokushoho）へのリンクを常に一覧へ表示する。
+  // Shopify のポリシーが未設定でも、このページは 404 にしない。
 
   const seo = seoPayload.policies({policies, url: request.url});
 
@@ -47,7 +47,7 @@ export default function Policies() {
 
   return (
     <>
-      <PageHeader heading="Policies" />
+      <PageHeader heading="各種ポリシー" />
       <Section padding="x" className="mb-24">
         {policies.map((policy) => {
           return (
@@ -58,6 +58,10 @@ export default function Policies() {
             )
           );
         })}
+        {/* 特定商取引法に基づく表記は固定ページで管理している */}
+        <Heading className="font-normal text-heading">
+          <Link to="/pages/tokushoho">特定商取引法に基づく表記</Link>
+        </Heading>
       </Section>
     </>
   );
