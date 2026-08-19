@@ -128,17 +128,30 @@ function FooterMenu({menu}: {menu?: EnhancedMenu}) {
 }
 
 function FooterInfoLinks() {
+  // フッター共通のスタイル（FooterMenu と揃える）
+  const styles = {
+    section: 'grid gap-4 text-primary',
+    nav: 'grid gap-2 pb-6 text-primary',
+  };
+
   const links = [
     {to: '/flow', title: 'ご利用の流れ'},
     {to: '/contact', title: 'お問い合わせ'},
-    // 特定商取引法に基づく表記は同一ドメイン内に設置する必要がある（決済審査要件）
+    // 特定商取引法に基づく表記は Storefront API のポリシーに含まれないため、
+    // 固定ページ（オンラインストア → ページ、ハンドル: tokushoho）で管理する
     {to: '/pages/tokushoho', title: '特定商取引法に基づく表記'},
-    {to: '/policies', title: '各種ポリシー'},
+    {to: '/policies/privacy-policy', title: 'プライバシーポリシー'},
+    {to: '/policies/terms-of-service', title: '利用規約'},
+    {to: '/policies/refund-policy', title: '返金ポリシー'},
+    {to: '/policies/shipping-policy', title: '配送ポリシー'},
   ];
+
   return (
-    <section className="grid gap-4 text-primary">
-      <h3 className="font-bold cursor-default text-lead">ご案内</h3>
-      <nav className="grid gap-2">
+    <section className={styles.section}>
+      <Heading size="lead" as="h3">
+        ご案内
+      </Heading>
+      <nav className={styles.nav}>
         {links.map((link) => (
           <Link key={link.to} to={link.to} prefetch="intent">
             {link.title}
