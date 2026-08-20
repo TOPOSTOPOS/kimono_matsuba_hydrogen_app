@@ -8,7 +8,6 @@ import invariant from 'tiny-invariant';
 import {getSeoMeta} from '@shopify/hydrogen';
 
 import {PageHeader, Section} from '~/components/Text';
-import {Button} from '~/components/Button';
 import {routeHeaders} from '~/data/cache';
 import {seoPayload} from '~/lib/seo.server';
 import {getLegalNoticePolicy} from '~/lib/admin.server';
@@ -75,24 +74,13 @@ export default function Policies() {
       <Section
         padding="all"
         display="flex"
-        className="flex-col items-baseline w-full gap-8 md:flex-row"
+        className="flex-col items-baseline mx-auto w-full max-w-245 gap-8"
       >
-        <PageHeader
-          heading={policy.title}
-          className="grid items-start grow gap-4 md:sticky top-36 md:w-5/12"
-        >
-          <Button
-            className="justify-self-start"
-            variant="inline"
-            to={'/policies'}
-          >
-            &larr; Back to Policies
-          </Button>
-        </PageHeader>
-        <div className="grow w-full md:w-7/12">
+        <PageHeader heading={policy.title} className="grid gap-4 w-full" />
+        <div className="w-full">
           <div
             dangerouslySetInnerHTML={{__html: policy.body}}
-            className="prose"
+            className="prose max-w-none"
           />
         </div>
       </Section>
