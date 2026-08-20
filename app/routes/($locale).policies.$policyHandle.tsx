@@ -11,6 +11,7 @@ import {PageHeader, Section} from '~/components/Text';
 import {routeHeaders} from '~/data/cache';
 import {seoPayload} from '~/lib/seo.server';
 import {getLegalNoticePolicy} from '~/lib/admin.server';
+import {getPolicyTitle} from '~/lib/policy-titles';
 
 export const headers = routeHeaders;
 
@@ -26,7 +27,7 @@ export async function loader({request, params, context}: LoaderFunctionArgs) {
     }
     const policy = {
       id: 'legal-notice',
-      title: legalNotice.title,
+      title: getPolicyTitle('legal-notice', legalNotice.title),
       handle: 'legal-notice',
       body: legalNotice.body,
       url: request.url,
@@ -51,11 +52,17 @@ export async function loader({request, params, context}: LoaderFunctionArgs) {
   });
 
   invariant(data, 'No data returned from Shopify API');
-  const policy = data.shop?.[policyName];
+  const fetchedPolicy = data.shop?.[policyName];
 
-  if (!policy) {
+  if (!fetchedPolicy) {
     throw new Response(null, {status: 404});
   }
+
+  // Shopify のタイトルが英語のため、サイト表示用の日本語名に差し替える
+  const policy = {
+    ...fetchedPolicy,
+    title: getPolicyTitle(params.policyHandle, fetchedPolicy.title),
+  };
 
   const seo = seoPayload.policy({policy, url: request.url});
 
