@@ -128,12 +128,6 @@ function FooterMenu({menu}: {menu?: EnhancedMenu}) {
 }
 
 function FooterInfoLinks() {
-  // フッター共通のスタイル（FooterMenu と揃える）
-  const styles = {
-    section: 'grid gap-4 text-primary',
-    nav: 'grid gap-2 pb-6 text-primary',
-  };
-
   const links = [
     {to: '/flow', title: 'ご利用の流れ'},
     {to: '/contact', title: 'お問い合わせ'},
@@ -145,18 +139,24 @@ function FooterInfoLinks() {
     {to: '/policies/shipping-policy', title: '配送ポリシー'},
   ];
 
+  // 「種類から探す」などのナビ（Nav.tsx）と同じスタイルに揃える
   return (
-    <section className={styles.section}>
-      <Heading size="lead" as="h3">
-        ご案内
-      </Heading>
-      <nav className={styles.nav}>
+    <section>
+      <div className="px-2 py-2 cursor-default select-none">
+        <span className="text-base font-semibold text-primary/80">ご案内</span>
+      </div>
+      <div className="flex flex-col shrink-0">
         {links.map((link) => (
-          <Link key={link.to} to={link.to} prefetch="intent">
-            {link.title}
+          <Link
+            key={link.to}
+            to={link.to}
+            prefetch="intent"
+            className="flex justify-between items-center px-3 py-1.5 text-sm whitespace-nowrap transition-colors duration-150 text-primary"
+          >
+            <span className="text-[13px]">{link.title}</span>
           </Link>
         ))}
-      </nav>
+      </div>
     </section>
   );
 }
