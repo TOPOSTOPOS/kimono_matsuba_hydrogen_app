@@ -345,3 +345,70 @@ export async function getPreviewProduct(
     variantsNodes,
   };
 }
+
+/**
+ * 特定商取引法に基づく表記（LEGAL_NOTICE）を Admin API から取得する。
+ *
+ * Storefront API の Shop はポリシーとして privacyPolicy / refundPolicy /
+ * shippingPolicy / termsOfService しか返さず、特商法は取得できないため、
+ * Admin API の shopPolicies を利用する。
+ *
+ * トークン未設定・未作成・エラー時は null を返す（呼び出し側で 404 にする）。
+ */
+export async function getLegalNoticePolicy(env: {
+  PRIVATE_ADMIN_API_TOKEN?: string;
+  PUBLIC_STORE_DOMAIN?: string;
+}): Promise<{title: string; body: string} | null> {
+  if (!env.PRIVATE_ADMIN_API_TOKEN || !env.PUBLIC_STORE_DOMAIN) return null;
+
+  const query = `
+    query ShopLegalNotice {
+      shop {
+        shopPolicies {
+          type
+          title
+          body
+        }
+      }
+    }
+  `;
+
+  try {
+    const res = await fetch(
+      `https://${env.PUBLIC_STORE_DOMAIN}/admin/api/${ADMIN_API_VERSION}/graphql.json`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Shopify-Access-Token': env.PRIVATE_ADMIN_API_TOKEN,
+        },
+        body: JSON.stringify({query}),
+      },
+    );
+    if (!res.ok) {
+      // eslint-disable-next-line no-console
+      console.error('[legal-notice] Admin API HTTP error', res.status);
+      return null;
+    }
+    const json: any = await res.json();
+    if (json?.errors) {
+      // eslint-disable-next-line no-console
+      console.error('[legal-notice] Admin API GraphQL errors', json.errors);
+      return null;
+    }
+
+    const policy = (json?.data?.shop?.shopPolicies ?? []).find(
+      (p: any) => p?.type === 'LEGAL_NOTICE',
+    );
+    if (!policy?.body) return null;
+
+    return {
+      title: '特定商取引法に基づく表記',
+      body: policy.body as string,
+    };
+  } catch (error) {
+    // eslint-disable-next-line no-console
+    console.error('[legal-notice] Admin API fetch failed', error);
+    return null;
+  }
+}

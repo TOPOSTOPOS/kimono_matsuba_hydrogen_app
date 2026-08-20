@@ -137,9 +137,8 @@ function FooterInfoLinks() {
   const links = [
     {to: '/flow', title: 'ご利用の流れ'},
     {to: '/contact', title: 'お問い合わせ'},
-    // 特定商取引法に基づく表記は Storefront API のポリシーに含まれないため、
-    // 固定ページ（オンラインストア → ページ、ハンドル: tokushoho）で管理する
-    {to: '/pages/tokushoho', title: '特定商取引法に基づく表記'},
+    // 特定商取引法に基づく表記（Shopifyの「設定 → ポリシー」で編集）
+    {to: '/policies/legal-notice', title: '特定商取引法に基づく表記'},
     {to: '/policies/privacy-policy', title: 'プライバシーポリシー'},
     {to: '/policies/terms-of-service', title: '利用規約'},
     {to: '/policies/refund-policy', title: '返金ポリシー'},

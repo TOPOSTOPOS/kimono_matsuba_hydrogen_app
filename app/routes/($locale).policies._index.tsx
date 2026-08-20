@@ -58,9 +58,9 @@ export default function Policies() {
             )
           );
         })}
-        {/* 特定商取引法に基づく表記は固定ページで管理している */}
+        {/* 特定商取引法に基づく表記は Storefront API に含まれないため個別にリンクする */}
         <Heading className="font-normal text-heading">
-          <Link to="/pages/tokushoho">特定商取引法に基づく表記</Link>
+          <Link to="/policies/legal-notice">特定商取引法に基づく表記</Link>
         </Heading>
       </Section>
     </>

@@ -11,11 +11,29 @@ import {PageHeader, Section} from '~/components/Text';
 import {Button} from '~/components/Button';
 import {routeHeaders} from '~/data/cache';
 import {seoPayload} from '~/lib/seo.server';
+import {getLegalNoticePolicy} from '~/lib/admin.server';
 
 export const headers = routeHeaders;
 
 export async function loader({request, params, context}: LoaderFunctionArgs) {
   invariant(params.policyHandle, 'Missing policy handle');
+
+  // 特定商取引法に基づく表記は Storefront API のポリシーに含まれないため、
+  // Admin API 経由で取得する（決済審査で同一ドメイン内への設置が必須）
+  if (params.policyHandle === 'legal-notice') {
+    const legalNotice = await getLegalNoticePolicy(context.env);
+    if (!legalNotice) {
+      throw new Response(null, {status: 404});
+    }
+    const policy = {
+      id: 'legal-notice',
+      title: legalNotice.title,
+      handle: 'legal-notice',
+      body: legalNotice.body,
+      url: request.url,
+    };
+    return json({policy, seo: seoPayload.policy({policy, url: request.url})});
+  }
 
   const policyName = params.policyHandle.replace(
     /-([a-z])/g,
