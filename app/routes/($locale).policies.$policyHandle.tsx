@@ -83,7 +83,10 @@ export default function Policies() {
         display="flex"
         className="flex-col items-baseline mx-auto w-full max-w-245 gap-8"
       >
-        <PageHeader heading={policy.title} className="grid gap-4 w-full" />
+        <PageHeader
+          heading={policy.title}
+          className="grid gap-4 w-full px-0! pb-0!"
+        />
         <div className="w-full">
           <div
             dangerouslySetInnerHTML={{__html: policy.body}}
