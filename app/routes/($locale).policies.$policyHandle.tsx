@@ -8,14 +8,32 @@ import invariant from 'tiny-invariant';
 import {getSeoMeta} from '@shopify/hydrogen';
 
 import {PageHeader, Section} from '~/components/Text';
-import {Button} from '~/components/Button';
 import {routeHeaders} from '~/data/cache';
 import {seoPayload} from '~/lib/seo.server';
+import {getLegalNoticePolicy} from '~/lib/admin.server';
+import {getPolicyTitle} from '~/lib/policy-titles';
 
 export const headers = routeHeaders;
 
 export async function loader({request, params, context}: LoaderFunctionArgs) {
   invariant(params.policyHandle, 'Missing policy handle');
+
+  // 特定商取引法に基づく表記は Storefront API のポリシーに含まれないため、
+  // Admin API 経由で取得する（決済審査で同一ドメイン内への設置が必須）
+  if (params.policyHandle === 'legal-notice') {
+    const legalNotice = await getLegalNoticePolicy(context.env);
+    if (!legalNotice) {
+      throw new Response(null, {status: 404});
+    }
+    const policy = {
+      id: 'legal-notice',
+      title: getPolicyTitle('legal-notice', legalNotice.title),
+      handle: 'legal-notice',
+      body: legalNotice.body,
+      url: request.url,
+    };
+    return json({policy, seo: seoPayload.policy({policy, url: request.url})});
+  }
 
   const policyName = params.policyHandle.replace(
     /-([a-z])/g,
@@ -34,11 +52,17 @@ export async function loader({request, params, context}: LoaderFunctionArgs) {
   });
 
   invariant(data, 'No data returned from Shopify API');
-  const policy = data.shop?.[policyName];
+  const fetchedPolicy = data.shop?.[policyName];
 
-  if (!policy) {
+  if (!fetchedPolicy) {
     throw new Response(null, {status: 404});
   }
+
+  // Shopify のタイトルが英語のため、サイト表示用の日本語名に差し替える
+  const policy = {
+    ...fetchedPolicy,
+    title: getPolicyTitle(params.policyHandle, fetchedPolicy.title),
+  };
 
   const seo = seoPayload.policy({policy, url: request.url});
 
@@ -57,24 +81,16 @@ export default function Policies() {
       <Section
         padding="all"
         display="flex"
-        className="flex-col items-baseline w-full gap-8 md:flex-row"
+        className="flex-col items-baseline mx-auto w-full max-w-245 gap-8"
       >
         <PageHeader
           heading={policy.title}
-          className="grid items-start grow gap-4 md:sticky top-36 md:w-5/12"
-        >
-          <Button
-            className="justify-self-start"
-            variant="inline"
-            to={'/policies'}
-          >
-            &larr; Back to Policies
-          </Button>
-        </PageHeader>
-        <div className="grow w-full md:w-7/12">
+          className="grid gap-4 w-full px-0! pb-0!"
+        />
+        <div className="w-full">
           <div
             dangerouslySetInnerHTML={{__html: policy.body}}
-            className="prose"
+            className="prose max-w-none"
           />
         </div>
       </Section>

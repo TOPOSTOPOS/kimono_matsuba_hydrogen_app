@@ -131,20 +131,32 @@ function FooterInfoLinks() {
   const links = [
     {to: '/flow', title: 'ご利用の流れ'},
     {to: '/contact', title: 'お問い合わせ'},
-    // 特定商取引法に基づく表記は同一ドメイン内に設置する必要がある（決済審査要件）
-    {to: '/pages/tokushoho', title: '特定商取引法に基づく表記'},
-    {to: '/policies', title: '各種ポリシー'},
+    // 特定商取引法に基づく表記（Shopifyの「設定 → ポリシー」で編集）
+    {to: '/policies/legal-notice', title: '特定商取引法に基づく表記'},
+    {to: '/policies/privacy-policy', title: 'プライバシーポリシー'},
+    {to: '/policies/terms-of-service', title: '利用規約'},
+    {to: '/policies/refund-policy', title: '返金ポリシー'},
+    {to: '/policies/shipping-policy', title: '配送ポリシー'},
   ];
+
+  // 「種類から探す」などのナビ（Nav.tsx）と同じスタイルに揃える
   return (
-    <section className="grid gap-4 text-primary">
-      <h3 className="font-bold cursor-default text-lead">ご案内</h3>
-      <nav className="grid gap-2">
+    <section>
+      <div className="px-2 py-2 cursor-default select-none">
+        <span className="text-base font-semibold text-primary/80">ご案内</span>
+      </div>
+      <div className="flex flex-col shrink-0">
         {links.map((link) => (
-          <Link key={link.to} to={link.to} prefetch="intent">
-            {link.title}
+          <Link
+            key={link.to}
+            to={link.to}
+            prefetch="intent"
+            className="flex justify-between items-center px-3 py-1.5 text-sm whitespace-nowrap transition-colors duration-150 text-primary"
+          >
+            <span className="text-[13px]">{link.title}</span>
           </Link>
         ))}
-      </nav>
+      </div>
     </section>
   );
 }

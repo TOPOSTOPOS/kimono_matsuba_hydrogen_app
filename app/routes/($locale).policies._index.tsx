@@ -11,6 +11,7 @@ import {PageHeader, Section, Heading} from '~/components/Text';
 import {Link} from '~/components/Link';
 import {routeHeaders} from '~/data/cache';
 import {seoPayload} from '~/lib/seo.server';
+import {getPolicyTitle} from '~/lib/policy-titles';
 import type {NonNullableFields} from '~/lib/type';
 
 export const headers = routeHeaders;
@@ -53,14 +54,16 @@ export default function Policies() {
           return (
             policy && (
               <Heading className="font-normal text-heading" key={policy.id}>
-                <Link to={`/policies/${policy.handle}`}>{policy.title}</Link>
+                <Link to={`/policies/${policy.handle}`}>
+                  {getPolicyTitle(policy.handle, policy.title)}
+                </Link>
               </Heading>
             )
           );
         })}
-        {/* 特定商取引法に基づく表記は固定ページで管理している */}
+        {/* 特定商取引法に基づく表記は Storefront API に含まれないため個別にリンクする */}
         <Heading className="font-normal text-heading">
-          <Link to="/pages/tokushoho">特定商取引法に基づく表記</Link>
+          <Link to="/policies/legal-notice">特定商取引法に基づく表記</Link>
         </Heading>
       </Section>
     </>
